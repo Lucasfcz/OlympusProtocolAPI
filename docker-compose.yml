@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: olympus-db
+    environment:
+      POSTGRES_DB: olympus
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 7121
+    ports:
+      - "5432:5432"
+    volumes:
+      - olympus_data:/var/lib/postgresql/data
+
+volumes:
+  olympus_data:
