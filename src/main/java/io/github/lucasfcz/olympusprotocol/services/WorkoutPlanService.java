@@ -1,11 +1,9 @@
 package io.github.lucasfcz.olympusprotocol.services;
 
-
 import io.github.lucasfcz.olympusprotocol.dto.requests.WorkoutDayExerciseRequest;
 import io.github.lucasfcz.olympusprotocol.dto.requests.WorkoutDayRequest;
 import io.github.lucasfcz.olympusprotocol.dto.requests.WorkoutPlanRequest;
 import io.github.lucasfcz.olympusprotocol.dto.responses.WorkoutPlanResponse;
-import io.github.lucasfcz.olympusprotocol.exceptions.BusinessException;
 import io.github.lucasfcz.olympusprotocol.exceptions.ForbiddenException;
 import io.github.lucasfcz.olympusprotocol.exceptions.ResourceNotFoundException;
 import io.github.lucasfcz.olympusprotocol.mappers.WorkoutPlanMapper;
@@ -31,6 +29,7 @@ public class WorkoutPlanService {
     private final ExerciseRepository exerciseRepository;
     private final UserRepository userRepository;
     private final WorkoutPlanMapper workoutPlanMapper;
+    private final ExerciseValidationService exerciseValidationService;
 
     public WorkoutPlanResponse create(UUID userId, WorkoutPlanRequest request) {
         var user = userRepository.findById(userId)
@@ -87,12 +86,6 @@ public class WorkoutPlanService {
         var exercise = exerciseRepository.findById(request.exerciseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Exercise", request.exerciseId()));
 
-        String levelWarning = null;
-        if (exercise.getMinExperienceLevel().ordinal() > plan.getUser().getExperienceLevel().ordinal()) {
-            levelWarning = "This exercise is recommended for " + exercise.getMinExperienceLevel()
-                    + " and your level is " + plan.getUser().getExperienceLevel() + ", Are you sure about it? Be careful.";
-        }
-
         var dayExercise = new WorkoutDayExercise(
                 day, exercise,
                 request.exerciseOrder(),
@@ -104,7 +97,11 @@ public class WorkoutPlanService {
         day.addExercise(dayExercise);
         workoutDayRepository.save(day);
 
-        return workoutPlanMapper.toResponse(plan);
+        var warning = exerciseValidationService.checkLevelCompatibility(exercise, plan.getUser());
+
+        return warning.isPresent()
+                ? workoutPlanMapper.toResponse(plan, List.of(warning.get()))
+                : workoutPlanMapper.toResponse(plan);
     }
 
     public void deactivate(UUID userId, UUID planId) {

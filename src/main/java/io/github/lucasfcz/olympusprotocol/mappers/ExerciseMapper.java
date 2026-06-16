@@ -21,7 +21,7 @@ public class ExerciseMapper {
                 exercise.getId(),
                 exercise.getName(),
                 exercise.getDescription(),
-                exercise.getMinExperienceLevel(),
+                exercise.getRecommendedExperienceLevel(),
                 exercise.getSafetyRating(),
                 exercise.getEfficiencyRating(),
                 exercise.getAdminNotes(),

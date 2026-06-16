@@ -12,5 +12,6 @@ public record WorkoutPlanResponse(
         WorkoutGoal goal,
         boolean active,
         LocalDateTime createdAt,
-        List<WorkoutDayResponse> days
+        List<WorkoutDayResponse> days,
+        List<String> warnings
 ) {}

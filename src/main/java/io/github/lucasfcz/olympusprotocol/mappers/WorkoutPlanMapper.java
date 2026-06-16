@@ -10,11 +10,16 @@ import io.github.lucasfcz.olympusprotocol.models.WorkoutPlan;
 import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
+import java.util.List;
 
 @Component
 public class WorkoutPlanMapper {
 
     public WorkoutPlanResponse toResponse(WorkoutPlan plan) {
+        return toResponse(plan, List.of());
+    }
+
+    public WorkoutPlanResponse toResponse(WorkoutPlan plan, List<String> warnings) {
         return new WorkoutPlanResponse(
                 plan.getId(),
                 plan.getName(),
@@ -24,7 +29,8 @@ public class WorkoutPlanMapper {
                 plan.getWorkoutDays().stream()
                         .sorted(Comparator.comparing(WorkoutDay::getDayOrder))
                         .map(this::toDayResponse)
-                        .toList()
+                        .toList(),
+                warnings
         );
     }
 

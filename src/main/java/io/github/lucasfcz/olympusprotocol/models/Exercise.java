@@ -35,7 +35,7 @@ public class Exercise {
     // recommendations about experience required
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ExperienceLevel minExperienceLevel;
+    private ExperienceLevel recommendedExperienceLevel;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -65,11 +65,11 @@ public class Exercise {
     @Column(nullable = false)
     private boolean active;
 
-    public Exercise(String name, String description, ExperienceLevel minExperienceLevel, SafetyRating safetyRating,
+    public Exercise(String name, String description, ExperienceLevel recommendedExperienceLevel, SafetyRating safetyRating,
                     EfficiencyRating efficiencyRating, String adminNotes, String gifUrl) {
         this.name = name;
         this.description = description;
-        this.minExperienceLevel = minExperienceLevel;
+        this.recommendedExperienceLevel = recommendedExperienceLevel;
         this.safetyRating = safetyRating;
         this.efficiencyRating = efficiencyRating;
         this.adminNotes = adminNotes;
@@ -87,7 +87,7 @@ public class Exercise {
                            EfficiencyRating efficiencyRating, String adminNotes, String gifUrl) {
         this.name = name;
         this.description = description;
-        this.minExperienceLevel = minExperienceLevel;
+        this.recommendedExperienceLevel = minExperienceLevel;
         this.safetyRating = safetyRating;
         this.efficiencyRating = efficiencyRating;
         this.adminNotes = adminNotes;

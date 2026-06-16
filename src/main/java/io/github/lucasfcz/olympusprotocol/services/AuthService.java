@@ -4,7 +4,7 @@ import io.github.lucasfcz.olympusprotocol.dto.requests.LoginRequest;
 import io.github.lucasfcz.olympusprotocol.dto.requests.RegisterRequest;
 import io.github.lucasfcz.olympusprotocol.dto.responses.AuthResponse;
 import io.github.lucasfcz.olympusprotocol.exceptions.DuplicateResourceException;
-import io.github.lucasfcz.olympusprotocol.exceptions.NotFoundException;
+import io.github.lucasfcz.olympusprotocol.exceptions.ResourceNotFoundException;
 import io.github.lucasfcz.olympusprotocol.models.User;
 import io.github.lucasfcz.olympusprotocol.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +45,7 @@ public class AuthService {
         );
 
         var user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new NotFoundException("User not found with this email: " + request.email()));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", request.email()));
 
         return new AuthResponse(jwtService.generateToken(user), user.getName(), user.getEmail(), user.getRole());
     }
