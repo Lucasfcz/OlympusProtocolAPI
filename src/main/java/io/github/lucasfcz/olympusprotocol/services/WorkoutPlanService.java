@@ -67,9 +67,7 @@ public class WorkoutPlanService {
         return workoutPlanMapper.toResponse(workoutPlanRepository.save(plan));
     }
 
-    public WorkoutPlanResponse addExerciseToDay(UUID userId, UUID planId,
-                                                UUID dayId,
-                                                WorkoutDayExerciseRequest request) {
+    public WorkoutPlanResponse addExerciseToDay(UUID userId, UUID planId, UUID dayId, WorkoutDayExerciseRequest request) {
         var plan = workoutPlanRepository.findById(planId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
 
@@ -218,6 +216,14 @@ public class WorkoutPlanService {
         checkOwnership(plan, userId);
         plan.reactivate();
         workoutPlanRepository.save(plan);
+    }
+
+    public void changeVisibility(UUID planId, UUID userId) {
+        var plan = workoutPlanRepository.findById(planId)
+                        .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
+
+        checkOwnership(plan, userId);
+        plan.changeVisibility();
     }
 
     private void checkOwnership(WorkoutPlan plan, UUID userId) {

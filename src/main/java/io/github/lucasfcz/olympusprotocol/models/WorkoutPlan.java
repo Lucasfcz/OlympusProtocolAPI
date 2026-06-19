@@ -1,5 +1,6 @@
 package io.github.lucasfcz.olympusprotocol.models;
 
+import io.github.lucasfcz.olympusprotocol.dto.requests.ReorderDaysRequest;
 import io.github.lucasfcz.olympusprotocol.models.enums.WorkoutGoal;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -41,11 +42,15 @@ public class WorkoutPlan {
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
+    private boolean isPublic;
+
+    @Column(nullable = false)
     private boolean active;
 
     public WorkoutPlan(User user, String name) {
         this.user = user;
         this.name = name;
+        this.isPublic = true;
         this.active = true;
     }
 
@@ -57,20 +62,13 @@ public class WorkoutPlan {
         workoutDays.removeIf(d -> d.getId().equals(dayId));
     }
 
-    public void reorderDays(List<DayOrderItem> orders) {
-        orders.forEach(item ->
-                workoutDays.stream()
-                        .filter(d -> d.getId().equals(item.dayId()))
-                        .findFirst()
-                        .ifPresent(d -> d.updateDay(d.getName(), item.order()))
-        );
-    }
-
     public void updateGoal(WorkoutGoal goal) {
         this.goal = goal;
     }
 
-    public record DayOrderItem(UUID dayId, Integer order) {}
+    public void changeVisibility() {
+        this.isPublic = !isPublic;
+    }
 
     public void deactivate() { this.active = false; }
 

@@ -4,6 +4,9 @@ import io.github.lucasfcz.olympusprotocol.dto.requests.*;
 import io.github.lucasfcz.olympusprotocol.dto.responses.WorkoutPlanResponse;
 import io.github.lucasfcz.olympusprotocol.models.User;
 import io.github.lucasfcz.olympusprotocol.services.WorkoutPlanService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +24,17 @@ public class WorkoutPlanController {
 
     private final WorkoutPlanService workoutPlanService;
 
+    @Operation(summary = "Create a workout plan", description = "User create a workout plan with one list of workouts day and these have one list of workouts exercises")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Successful in create a new workout plan"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized"
+            )
+    })
     @PostMapping
     public ResponseEntity<WorkoutPlanResponse> create(
             @AuthenticationPrincipal User user,
@@ -29,6 +43,7 @@ public class WorkoutPlanController {
                 .body(workoutPlanService.create(user.getId(), request));
     }
 
+    @Operation(summary = "List all exercises", description = "show all exercises, also can use some filters")
     @GetMapping
     public ResponseEntity<List<WorkoutPlanResponse>> findAll(
             @AuthenticationPrincipal User user) {
@@ -124,11 +139,18 @@ public class WorkoutPlanController {
     }
 
     @PatchMapping("/{planId}/days/{dayId}/exercises/reorder")
-    public ResponseEntity<WorkoutPlanResponse> reorderExercisesInDay(
-            @AuthenticationPrincipal User user,
+    public ResponseEntity<WorkoutPlanResponse> reorderExercisesInDay(@AuthenticationPrincipal User user,
             @PathVariable UUID planId,
             @PathVariable UUID dayId,
             @RequestBody @Valid ReorderExercisesInDayRequest request) {
         return ResponseEntity.ok(workoutPlanService.reorderExercisesInDay(user.getId(), planId, dayId, request));
+    }
+
+    @GetMapping("/{planId}")
+    public ResponseEntity<Void> changeVisibility(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID planId) {
+        workoutPlanService.changeVisibility(user.getId(), planId);
+        return ResponseEntity.noContent().build();
     }
 }
