@@ -85,16 +85,19 @@ public class WorkoutSessionService {
                 : workoutSessionMapper.toResponse(saved);
     }
 
-    public WorkoutSessionResponse deleteExercise(UUID userId, UUID sessionId, UUID exerciseId) {
+    public WorkoutSessionResponse removeExercise(UUID userId, UUID sessionId, UUID exerciseId) {
         var session = getValidSession(sessionId, userId);
         session.removeExercise(getExerciseInSession(session, exerciseId));
+
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
     }
 
-    public WorkoutSessionResponse addSet(UUID userId, UUID sessionId, UUID exerciseId, AddSetRequest request) {
+    public WorkoutSessionResponse addSet(UUID userId, UUID sessionId, UUID exerciseId, SetRequest request) {
         var session = getValidSession(sessionId, userId);
-        getExerciseInSession(session, exerciseId)
-                .addSet(new WorkoutSessionSet(null, request.setOrder(), request.reps(), request.weight(), request.restTime()));
+        var sessionExercise = getExerciseInSession(session, exerciseId);
+
+        sessionExercise.addSet(new WorkoutSessionSet(sessionExercise, request.setOrder(), request.reps(), request.weight(), request.restTime()));
+
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
     }
 
@@ -104,7 +107,7 @@ public class WorkoutSessionService {
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
     }
 
-    public WorkoutSessionResponse updateSet(UUID userId, UUID sessionId, UUID setId, AddSetRequest request) {
+    public WorkoutSessionResponse updateSet(UUID userId, UUID sessionId, UUID setId, SetRequest request) {
         var session = getValidSession(sessionId, userId);
         getSetOrThrow(session, setId).updateSet(request.setOrder(), request.reps(), request.weight(), request.restTime());
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));

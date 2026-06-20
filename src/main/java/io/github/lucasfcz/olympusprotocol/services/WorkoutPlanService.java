@@ -102,9 +102,6 @@ public class WorkoutPlanService {
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
         checkOwnership(plan, userId);
 
-        var day = workoutDayRepository.findById(dayId)
-                .orElseThrow(() -> new ResourceNotFoundException("WorkoutDay", dayId));
-
         plan.removeDay(dayId);
         workoutPlanRepository.save(plan);
 
@@ -180,7 +177,7 @@ public class WorkoutPlanService {
         return workoutPlanMapper.toResponse(workoutPlanRepository.save(plan));
     }
 
-    public WorkoutPlanResponse reorderExercisesInDay(UUID userId, UUID planId, UUID dayId, ReorderExercisesInDayRequest request) {
+    public WorkoutPlanResponse reorderExercisesInDay(UUID userId, UUID planId, UUID dayId, ReorderExercisesRequest request) {
         var plan = workoutPlanRepository.findById(planId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
         checkOwnership(plan, userId);
@@ -218,12 +215,14 @@ public class WorkoutPlanService {
         workoutPlanRepository.save(plan);
     }
 
-    public void changeVisibility(UUID planId, UUID userId) {
+    public void changeVisibility(UUID userId, UUID planId) {
         var plan = workoutPlanRepository.findById(planId)
-                        .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
+                .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
 
         checkOwnership(plan, userId);
         plan.changeVisibility();
+
+        workoutPlanRepository.save(plan);
     }
 
     private void checkOwnership(WorkoutPlan plan, UUID userId) {
