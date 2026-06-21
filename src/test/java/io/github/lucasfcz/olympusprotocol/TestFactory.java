@@ -26,7 +26,7 @@ public class TestFactory {
     }
 
     public static Exercise makeExercise(ExperienceLevel level) {
-        return new Exercise("Squat", "Strong legs exercise", level, SafetyRating.SAFE, EfficiencyRating.HIGH, "notes", "gif");
+        return new Exercise("Squat", "Strong legs exercise", level, SafetyRating.SAFE, EfficiencyRating.HIGH, "notes", "gif", false);
     }
 
     public static WorkoutPlan makePlan(User user) {
@@ -42,6 +42,7 @@ public class TestFactory {
                 EfficiencyRating.MEDIUM,
                 "Keep chest close to ground",
                 "gif_url",
+                false,
                 List.of(),
                 List.of(),
                 List.of()

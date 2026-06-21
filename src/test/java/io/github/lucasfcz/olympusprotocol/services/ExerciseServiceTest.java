@@ -58,7 +58,7 @@ class ExerciseServiceTest {
             EXERCISE_ID, exerciseRequest.name(), exerciseRequest.description(),
             exerciseRequest.minExperienceLevel(), exerciseRequest.safetyRating(),
             exerciseRequest.efficiencyRating(), exerciseRequest.adminNotes(),
-            exerciseRequest.gifUrl(), true, List.of(), List.of(), List.of()
+            exerciseRequest.gifUrl(), false, true, List.of(), List.of(), List.of()
         );
         when(exerciseMapper.toResponse(any(Exercise.class))).thenReturn(mockResponse);
 
@@ -91,7 +91,7 @@ class ExerciseServiceTest {
         var mockResponse = new ExerciseResponse(
             EXERCISE_ID, exercise.getName(), exercise.getDescription(),
             exercise.getRecommendedExperienceLevel(), exercise.getSafetyRating(),
-            exercise.getEfficiencyRating(), exercise.getAdminNotes(), exercise.getGifUrl(),
+            exercise.getEfficiencyRating(), exercise.getAdminNotes(), exercise.getGifUrl(), false
             true, List.of(), List.of(), List.of()
         );
         when(exerciseRepository.findById(EXERCISE_ID)).thenReturn(Optional.of(exercise));

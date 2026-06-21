@@ -57,36 +57,11 @@ public class ExerciseService {
                                           List<MuscleHead> muscleHeads) {
         var spec = ExerciseSpecification.filters(name, muscleGroups, safetyRatings,
                 efficiencyRatings, levels, muscleHeads);
+
         return exerciseRepository.findAll(spec)
                 .stream()
                 .map(exerciseMapper::toResponse)
                 .toList();
-    }
-
-    private ExerciseResponse saveChildrenAndReturn(ExerciseRequest request, Exercise exercise) {
-        exercise.replaceMuscles(
-                request.muscles().stream()
-                        .map(m -> exerciseMapper.toMuscleEntity(exercise, m))
-                        .toList()
-        );
-
-        if (request.tips() != null) {
-            exercise.replaceTips(
-                    request.tips().stream()
-                            .map(t -> exerciseMapper.toTipEntity(exercise, t))
-                            .toList()
-            );
-        }
-
-        if (request.contraindications() != null) {
-            exercise.replaceContraindications(
-                    request.contraindications().stream()
-                            .map(c -> exerciseMapper.toContraindicationEntity(exercise, c))
-                            .toList()
-            );
-        }
-
-        return exerciseMapper.toResponse(exerciseRepository.save(exercise));
     }
 
     public ExerciseResponse update(UUID id, ExerciseRequest request) {
@@ -119,5 +94,31 @@ public class ExerciseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Exercise", id));
         exercise.reactivate();
         exerciseRepository.save(exercise);
+    }
+
+    private ExerciseResponse saveChildrenAndReturn(ExerciseRequest request, Exercise exercise) {
+        exercise.replaceMuscles(
+                request.muscles().stream()
+                        .map(m -> exerciseMapper.toMuscleEntity(exercise, m))
+                        .toList()
+        );
+
+        if (request.tips() != null) {
+            exercise.replaceTips(
+                    request.tips().stream()
+                            .map(t -> exerciseMapper.toTipEntity(exercise, t))
+                            .toList()
+            );
+        }
+
+        if (request.contraindications() != null) {
+            exercise.replaceContraindications(
+                    request.contraindications().stream()
+                            .map(c -> exerciseMapper.toContraindicationEntity(exercise, c))
+                            .toList()
+            );
+        }
+
+        return exerciseMapper.toResponse(exerciseRepository.save(exercise));
     }
 }

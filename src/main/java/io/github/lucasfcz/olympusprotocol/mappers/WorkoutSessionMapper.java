@@ -60,7 +60,8 @@ public class WorkoutSessionMapper {
         set.getSetOrder(),
         set.getReps(),
         set.getWeight(),
-        set.getRestTime()
+        set.getRestTime(),
+        set.getRpe()
         );
     }
 }

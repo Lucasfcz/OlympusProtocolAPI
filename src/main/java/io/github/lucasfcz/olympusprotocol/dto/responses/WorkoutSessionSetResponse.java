@@ -8,5 +8,6 @@ public record WorkoutSessionSetResponse(
         Integer setOrder,
         Integer reps,
         Double weight,
-        Integer restTIme
+        Integer restTIme,
+        Double rpe
 ) {}

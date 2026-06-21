@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
     }
 
 
-    //Handle 400 Bad Request - for general business logic violations.
+    // Handle 400 Bad Request - for general business logic violations.
     // This is the catch-all for BusinessException subclasses not explicitly mapped above.
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusiness(BusinessException ex) {

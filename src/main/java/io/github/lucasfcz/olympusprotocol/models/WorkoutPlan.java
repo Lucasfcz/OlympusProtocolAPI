@@ -37,15 +37,15 @@ public class WorkoutPlan {
     @OneToMany(mappedBy = "workoutPlan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<WorkoutDay> workoutDays = new ArrayList<>();
 
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
     @Column(nullable = false)
     private boolean isPublic;
 
     @Column(nullable = false)
     private boolean active;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     public WorkoutPlan(User user, String name) {
         this.user = user;

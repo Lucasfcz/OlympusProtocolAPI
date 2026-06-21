@@ -1,6 +1,8 @@
 package io.github.lucasfcz.olympusprotocol.models;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,19 +36,27 @@ public class WorkoutSessionSet {
     @Column
     private Integer restTime;
 
-    public WorkoutSessionSet(WorkoutSessionExercise workoutSessionExercise, Integer setOrder, Integer reps, Double weight, Integer restTime) {
+    // Rating percent exertion
+    @Column
+    @Min(value = 0, message = "rpe cannot be less than 0")
+    @Max(value = 10, message = "rpe cannot be more than 10")
+    private Double rpe;
+
+    public WorkoutSessionSet(WorkoutSessionExercise workoutSessionExercise, Integer setOrder, Integer reps, Double weight, Integer restTime, Double rpe) {
         this.workoutSessionExercise = workoutSessionExercise;
         this.setOrder = setOrder;
         this.reps = reps;
         this.weight = weight;
         this.restTime = restTime;
+        this.rpe = rpe;
     }
 
-    public void updateSet(Integer setOrder, Integer reps, Double weight, Integer restTime) {
+    public void updateSet(Integer setOrder, Integer reps, Double weight, Integer restTime, Double rpe) {
         this.setOrder = setOrder;
         this.reps = reps;
         this.weight = weight;
         this.restTime = restTime;
+        this.rpe = rpe;
     }
 
     public void updateOrder(Integer newOrder) {

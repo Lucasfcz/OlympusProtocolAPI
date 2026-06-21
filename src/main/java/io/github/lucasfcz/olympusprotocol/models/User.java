@@ -48,18 +48,18 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private ExperienceLevel experienceLevel;
 
-    @Column(nullable = false)
+    @Column
     private Double bodyWeight;
 
-    @Column(nullable = false)
+    @Column
     private Double height;
+
+    @Column(nullable = false)
+    private boolean active;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    @Column(nullable = false)
-    private boolean active;
 
     public User(String name, String email, String password, ExperienceLevel experienceLevel, Double bodyWeight, Double height) {
         this.name = name;
@@ -72,10 +72,17 @@ public class User implements UserDetails {
         this.active = true;
     }
 
-    public void updateProfile(String name, String avatarUrl, String email) {
+    public void updateProfile(String name, String avatarUrl) {
         this.name = name;
         this.avatarUrl = avatarUrl;
-        this.email = email;
+    }
+
+    public void updateBodyWeight(Double bodyWeight) {
+        this.bodyWeight = bodyWeight;
+    }
+
+    public void updateHeight(Double height) {
+        this.height = height;
     }
 
     public void changeRole(Role newRole) {

@@ -39,7 +39,7 @@ public class WorkoutSessionService {
         workoutDay.getExercises().forEach(de -> {
             var sessionExercise = new WorkoutSessionExercise(session, de.getExercise(), de.getExerciseOrder());
             for (int i = 1; i <= de.getSets(); i++) {
-                sessionExercise.addSet(new WorkoutSessionSet(sessionExercise, i, de.getReps(), null, de.getRestTime()));
+                sessionExercise.addSet(new WorkoutSessionSet(sessionExercise, i, de.getReps(), null, de.getRestTime(), null));
             }
             session.addExercise(sessionExercise);
         });
@@ -96,7 +96,11 @@ public class WorkoutSessionService {
         var session = getValidSession(sessionId, userId);
         var sessionExercise = getExerciseInSession(session, exerciseId);
 
-        sessionExercise.addSet(new WorkoutSessionSet(sessionExercise, request.setOrder(), request.reps(), request.weight(), request.restTime()));
+        var weight = resolveWeight(sessionExercise, session.getUser(), request.weight());
+
+        sessionExercise.addSet(new WorkoutSessionSet(
+                sessionExercise, request.setOrder(), request.reps(), weight, request.restTime(), request.rpe()
+        ));
 
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
     }
@@ -109,7 +113,7 @@ public class WorkoutSessionService {
 
     public WorkoutSessionResponse updateSet(UUID userId, UUID sessionId, UUID setId, SetRequest request) {
         var session = getValidSession(sessionId, userId);
-        getSetOrThrow(session, setId).updateSet(request.setOrder(), request.reps(), request.weight(), request.restTime());
+        getSetOrThrow(session, setId).updateSet(request.setOrder(), request.reps(), request.weight(), request.restTime(), request.rpe());
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
     }
 
@@ -194,6 +198,17 @@ public class WorkoutSessionService {
                 .filter(s -> s.getId().equals(setId))
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Set", setId));
+    }
+
+    private Double resolveWeight(WorkoutSessionExercise sessionExercise, User user, Double requestedWeight) {
+        if (sessionExercise.getExercise().isUsesBodyWeight()) {
+            if (user.getBodyWeight() == null) {
+                throw new BusinessException("Please set your body weight in your profile before logging bodyweight exercises.");
+            }
+            // sums adicional weights
+            return user.getBodyWeight() + (requestedWeight != null ? requestedWeight : 0);
+        }
+        return requestedWeight;
     }
 
     private void checkSessionOwnership(WorkoutSession session, UUID userId) {

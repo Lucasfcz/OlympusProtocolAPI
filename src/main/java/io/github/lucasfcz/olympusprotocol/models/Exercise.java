@@ -58,15 +58,15 @@ public class Exercise {
     @Column
     private String gifUrl;
 
-    @CreationTimestamp
-    @Column
-    private LocalDateTime createAt;
-
     @Column(nullable = false)
     private boolean usesBodyWeight;
 
     @Column(nullable = false)
     private boolean active;
+
+    @CreationTimestamp
+    @Column
+    private LocalDateTime createAt;
 
     public Exercise(String name, String description, ExperienceLevel recommendedExperienceLevel, SafetyRating safetyRating,
                     EfficiencyRating efficiencyRating, String adminNotes, String gifUrl, boolean usesBodyWeight) {
