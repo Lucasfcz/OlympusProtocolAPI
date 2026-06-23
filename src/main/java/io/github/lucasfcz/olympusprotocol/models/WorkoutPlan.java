@@ -16,7 +16,7 @@ import java.util.UUID;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "workouts")
+@Table(name = "workout_plans")
 public class WorkoutPlan {
 
     @Id

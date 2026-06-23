@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import io.github.lucasfcz.olympusprotocol.models.User;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,7 @@ public class JwtService {
         return Algorithm.HMAC256(secret);
     }
 
+    @Transactional
     public String generateToken(User user) {
         return JWT.create()
                 .withSubject(user.getEmail())
@@ -31,6 +33,7 @@ public class JwtService {
                 .sign(getAlgorithm());
     }
 
+    @Transactional
     public String extractEmail(String token) {
         return JWT.require(getAlgorithm())
                 .build()
@@ -38,6 +41,7 @@ public class JwtService {
                 .getSubject();
     }
 
+    @Transactional
     public boolean isTokenValid(String token) {
         try {
             JWT.require(getAlgorithm())

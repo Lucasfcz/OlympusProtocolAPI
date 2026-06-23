@@ -12,6 +12,7 @@ import io.github.lucasfcz.olympusprotocol.repositories.ExerciseRepository;
 import io.github.lucasfcz.olympusprotocol.repositories.UserRepository;
 import io.github.lucasfcz.olympusprotocol.repositories.WorkoutDayRepository;
 import io.github.lucasfcz.olympusprotocol.repositories.WorkoutPlanRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,7 @@ public class WorkoutPlanService {
     private final WorkoutPlanMapper workoutPlanMapper;
     private final ExerciseValidationService exerciseValidationService;
 
+    @Transactional
     public WorkoutPlanResponse create(UUID userId, WorkoutPlanRequest request) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
@@ -39,6 +41,7 @@ public class WorkoutPlanService {
         return workoutPlanMapper.toResponse(workoutPlanRepository.save(plan));
     }
 
+    @Transactional
     public List<WorkoutPlanResponse> findAllByUser(UUID userId) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
@@ -49,31 +52,29 @@ public class WorkoutPlanService {
                 .toList();
     }
 
+    @Transactional
     public WorkoutPlanResponse findById(UUID userId, UUID planId) {
         var plan = workoutPlanRepository.findById(planId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
-        checkOwnership(plan, userId);
 
         return workoutPlanMapper.toResponse(plan);
     }
 
+    @Transactional
     public WorkoutPlanResponse addDay(UUID userId, UUID planId, WorkoutDayRequest request) {
-        var plan = workoutPlanRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
-        checkOwnership(plan, userId);
+        var plan = getOwnedPlan(planId, userId);
+
         var day = new WorkoutDay(plan, request.name(), request.dayOrder());
         plan.addDay(day);
 
         return workoutPlanMapper.toResponse(workoutPlanRepository.save(plan));
     }
 
+    @Transactional
     public WorkoutPlanResponse addExerciseToDay(UUID userId, UUID planId, UUID dayId, WorkoutDayExerciseRequest request) {
-        var plan = workoutPlanRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
+        var plan = getOwnedPlan(planId, userId);
 
-        checkOwnership(plan, userId);
-
-        var day = workoutDayRepository.findById(dayId)
+        var day = workoutDayRepository.findByIdAndWorkoutPlanId(dayId, planId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutDay", dayId));
 
         var exercise = exerciseRepository.findById(request.exerciseId())
@@ -97,10 +98,9 @@ public class WorkoutPlanService {
                 : workoutPlanMapper.toResponse(plan);
     }
 
+    @Transactional
     public WorkoutPlanResponse removeDay(UUID userId, UUID planId, UUID dayId) {
-        var plan = workoutPlanRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
-        checkOwnership(plan, userId);
+        var plan = getOwnedPlan(planId, userId);
 
         plan.removeDay(dayId);
         workoutPlanRepository.save(plan);
@@ -108,12 +108,11 @@ public class WorkoutPlanService {
         return workoutPlanMapper.toResponse(plan);
     }
 
+    @Transactional
     public WorkoutPlanResponse removeExerciseFromDay(UUID userId, UUID planId, UUID dayId, UUID exerciseId) {
-        var plan = workoutPlanRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
-        checkOwnership(plan, userId);
+        var plan = getOwnedPlan(planId, userId);
 
-        var day = workoutDayRepository.findById(dayId)
+        var day = workoutDayRepository.findByIdAndWorkoutPlanId(dayId, planId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutDay", dayId));
 
         day.removeExercise(exerciseId);
@@ -122,12 +121,11 @@ public class WorkoutPlanService {
         return workoutPlanMapper.toResponse(plan);
     }
 
+    @Transactional
     public WorkoutPlanResponse updateDay(UUID userId, UUID planId, UUID dayId, UpdateWorkoutDayRequest request) {
-        var plan = workoutPlanRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
-        checkOwnership(plan, userId);
+        var plan = getOwnedPlan(planId, userId);
 
-        var day = workoutDayRepository.findById(dayId)
+        var day = workoutDayRepository.findByIdAndWorkoutPlanId(dayId, plan.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutDay", dayId));
 
         day.updateDay(request.name(), request.dayOrder());
@@ -136,12 +134,11 @@ public class WorkoutPlanService {
         return workoutPlanMapper.toResponse(plan);
     }
 
+    @Transactional
     public WorkoutPlanResponse updateExerciseInDay(UUID userId, UUID planId, UUID dayId, UUID exerciseId, UpdateWorkoutDayExerciseRequest request) {
-        var plan = workoutPlanRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
-        checkOwnership(plan, userId);
+        var plan = getOwnedPlan(planId, userId);
 
-        var day = workoutDayRepository.findById(dayId)
+        var day = workoutDayRepository.findByIdAndWorkoutPlanId(dayId, plan.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutDay", dayId));
 
         var exercise = exerciseRepository.findById(request.exerciseId())
@@ -162,10 +159,9 @@ public class WorkoutPlanService {
                 : workoutPlanMapper.toResponse(plan);
     }
 
+    @Transactional
     public WorkoutPlanResponse reorderDays(UUID userId, UUID planId, ReorderDaysRequest request) {
-        var plan = workoutPlanRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
-        checkOwnership(plan, userId);
+        var plan = getOwnedPlan(planId, userId);
 
         request.orders().forEach(item ->
                 plan.getWorkoutDays().stream()
@@ -177,12 +173,11 @@ public class WorkoutPlanService {
         return workoutPlanMapper.toResponse(workoutPlanRepository.save(plan));
     }
 
+    @Transactional
     public WorkoutPlanResponse reorderExercisesInDay(UUID userId, UUID planId, UUID dayId, ReorderExercisesRequest request) {
-        var plan = workoutPlanRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
-        checkOwnership(plan, userId);
+        var plan = getOwnedPlan(planId, userId);
 
-        var day = workoutDayRepository.findById(dayId)
+        var day = workoutDayRepository.findByIdAndWorkoutPlanId(dayId, plan.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutDay", dayId));
 
         request.orders().forEach(item ->
@@ -197,32 +192,39 @@ public class WorkoutPlanService {
         return workoutPlanMapper.toResponse(plan);
     }
 
+    @Transactional
     public void deactivate(UUID userId, UUID planId) {
-        var plan = workoutPlanRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
+        var plan = getOwnedPlan(planId, userId);
 
-        checkOwnership(plan, userId);
         plan.deactivate();
         workoutPlanRepository.save(plan);
     }
 
+    @Transactional
     public void reactivate(UUID userId, UUID planId) {
-        var plan = workoutPlanRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
+        var plan = getOwnedPlan(planId, userId);
 
-        checkOwnership(plan, userId);
         plan.reactivate();
         workoutPlanRepository.save(plan);
     }
 
+    @Transactional
     public void changeVisibility(UUID userId, UUID planId) {
-        var plan = workoutPlanRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
+        var plan = getOwnedPlan(planId, userId);
 
-        checkOwnership(plan, userId);
         plan.changeVisibility();
 
         workoutPlanRepository.save(plan);
+    }
+
+    // Helpers Methods
+
+    private WorkoutPlan getOwnedPlan(UUID planId, UUID userId) {
+        var plan = workoutPlanRepository.findById(planId)
+                .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));
+        checkOwnership(plan, userId);
+
+        return plan;
     }
 
     private void checkOwnership(WorkoutPlan plan, UUID userId) {

@@ -9,6 +9,7 @@ import io.github.lucasfcz.olympusprotocol.exceptions.ResourceNotFoundException;
 import io.github.lucasfcz.olympusprotocol.mappers.UserMapper;
 import io.github.lucasfcz.olympusprotocol.models.User;
 import io.github.lucasfcz.olympusprotocol.repositories.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,17 +23,20 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
+    @Transactional
     public UserResponse findOwnProfile(UUID userId) {
         var user = getUserOrThrow(userId);
         return userMapper.toResponse(user);
     }
 
+    @Transactional
     public PublicUserResponse findById(UUID userId) {
         var user = getUserOrThrow(userId);
 
         return userMapper.toPublicResponse(user);
     }
 
+    @Transactional
     public List<PublicUserResponse> findByNameIgnoringCase(String name) {
         return userRepository.findByNameContainingIgnoreCase(name)
                 .stream()
@@ -40,6 +44,7 @@ public class UserService {
                 .toList();
     }
 
+    @Transactional
     public UserResponse updateProfile(UUID userId, UpdateUserProfileRequest request) {
         var user = getUserOrThrow(userId);
 
@@ -48,6 +53,7 @@ public class UserService {
         return userMapper.toResponse(userRepository.save(user));
     }
 
+    @Transactional
     public UserResponse updateBodyWeight(UUID userId, UpdateUserBodyWeightRequest request) {
         var user = getUserOrThrow(userId);
         user.updateBodyWeight(request.bodyWeight());
@@ -55,6 +61,7 @@ public class UserService {
         return userMapper.toResponse(userRepository.save(user));
     }
 
+    @Transactional
     public UserResponse updateHeight(UUID userId, UpdateUserHeightRequest request) {
         var user = getUserOrThrow(userId);
         user.updateHeight(request.height());
@@ -62,6 +69,7 @@ public class UserService {
         return userMapper.toResponse(userRepository.save(user));
     }
 
+    @Transactional
     public void deactivate(UUID userId) {
         var user = getUserOrThrow(userId);
         user.deactivate();

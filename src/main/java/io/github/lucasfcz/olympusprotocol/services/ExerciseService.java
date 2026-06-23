@@ -9,6 +9,7 @@ import io.github.lucasfcz.olympusprotocol.models.Exercise;
 import io.github.lucasfcz.olympusprotocol.models.enums.*;
 import io.github.lucasfcz.olympusprotocol.repositories.ExerciseRepository;
 import io.github.lucasfcz.olympusprotocol.specifications.ExerciseSpecification;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,7 @@ public class ExerciseService {
     private final ExerciseRepository exerciseRepository;
     private final ExerciseMapper exerciseMapper;
 
+    @Transactional
     public ExerciseResponse create(ExerciseRequest request) {
         if (exerciseRepository.existsByNameIgnoreCase(request.name())) {
             throw new DuplicateResourceException("This exercise is already registered: " + request.name());
@@ -43,6 +45,7 @@ public class ExerciseService {
         return saveChildrenAndReturn(request, exercise);
     }
 
+    @Transactional
     public ExerciseResponse findById(UUID id) {
         return exerciseRepository.findById(id)
                 .map(exerciseMapper::toResponse)
@@ -64,6 +67,7 @@ public class ExerciseService {
                 .toList();
     }
 
+    @Transactional
     public ExerciseResponse update(UUID id, ExerciseRequest request) {
         var exercise = exerciseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Exercise", id));
@@ -82,6 +86,7 @@ public class ExerciseService {
         return saveChildrenAndReturn(request, exercise);
     }
 
+    @Transactional
     public void deactivate(UUID id) {
         var exercise = exerciseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Exercise", id));
@@ -89,6 +94,7 @@ public class ExerciseService {
         exerciseRepository.save(exercise);
     }
 
+    @Transactional
     public void reactivate(UUID id) {
         var exercise = exerciseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Exercise", id));
@@ -96,6 +102,7 @@ public class ExerciseService {
         exerciseRepository.save(exercise);
     }
 
+    
     private ExerciseResponse saveChildrenAndReturn(ExerciseRequest request, Exercise exercise) {
         exercise.replaceMuscles(
                 request.muscles().stream()

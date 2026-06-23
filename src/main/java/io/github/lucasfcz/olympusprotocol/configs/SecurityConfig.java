@@ -30,6 +30,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/stats/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/exercises/**").authenticated()
                         .requestMatchers("/api/exercises/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

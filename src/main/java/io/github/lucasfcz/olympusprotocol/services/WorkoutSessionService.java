@@ -8,6 +8,7 @@ import io.github.lucasfcz.olympusprotocol.exceptions.ResourceNotFoundException;
 import io.github.lucasfcz.olympusprotocol.mappers.WorkoutSessionMapper;
 import io.github.lucasfcz.olympusprotocol.models.*;
 import io.github.lucasfcz.olympusprotocol.repositories.*;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,12 +26,13 @@ public class WorkoutSessionService {
     private final ExerciseValidationService exerciseValidationService;
     private final WorkoutSessionMapper workoutSessionMapper;
 
+    @Transactional
     public WorkoutSessionResponse startFromPlan(UUID userId, UUID workoutDayId) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
         validateNoActiveSession(user);
 
-        var workoutDay = workoutDayRepository.findById(workoutDayId)
+        var workoutDay = workoutDayRepository.findByIdWithExercises(workoutDayId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutDay", workoutDayId));
         checkDayOwnership(workoutDay, userId);
 
@@ -47,6 +49,7 @@ public class WorkoutSessionService {
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
     }
 
+    @Transactional
     public WorkoutSessionResponse startFreeSession(UUID userId) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
@@ -55,20 +58,23 @@ public class WorkoutSessionService {
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(new WorkoutSession(user, null)));
     }
 
+    @Transactional
     public WorkoutSessionResponse findById(UUID userId, UUID sessionId) {
         return workoutSessionMapper.toResponse(getOwnedSession(sessionId, userId));
     }
 
+    @Transactional
     public List<WorkoutSessionResponse> findAllByUser(UUID userId) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
-        return workoutSessionRepository.findByUser(user)
+        return workoutSessionRepository.findByUserWithDetails(user)
                 .stream()
                 .map(workoutSessionMapper::toResponse)
                 .toList();
     }
 
+    @Transactional
     public WorkoutSessionResponse addExercise(UUID userId, UUID sessionId, AddExerciseToSessionRequest request) {
         var session = getValidSession(sessionId, userId);
 
@@ -85,6 +91,7 @@ public class WorkoutSessionService {
                 : workoutSessionMapper.toResponse(saved);
     }
 
+    @Transactional
     public WorkoutSessionResponse removeExercise(UUID userId, UUID sessionId, UUID exerciseId) {
         var session = getValidSession(sessionId, userId);
         session.removeExercise(getExerciseInSession(session, exerciseId));
@@ -92,6 +99,7 @@ public class WorkoutSessionService {
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
     }
 
+    @Transactional
     public WorkoutSessionResponse addSet(UUID userId, UUID sessionId, UUID exerciseId, SetRequest request) {
         var session = getValidSession(sessionId, userId);
         var sessionExercise = getExerciseInSession(session, exerciseId);
@@ -105,18 +113,21 @@ public class WorkoutSessionService {
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
     }
 
+    @Transactional
     public WorkoutSessionResponse removeSet(UUID userId, UUID sessionId, UUID exerciseId, UUID setId) {
         var session = getValidSession(sessionId, userId);
         getExerciseInSession(session, exerciseId).removeSet(getSetOrThrow(session, setId));
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
     }
 
+    @Transactional
     public WorkoutSessionResponse updateSet(UUID userId, UUID sessionId, UUID setId, SetRequest request) {
         var session = getValidSession(sessionId, userId);
         getSetOrThrow(session, setId).updateSet(request.setOrder(), request.reps(), request.weight(), request.restTime(), request.rpe());
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
     }
 
+    @Transactional
     public WorkoutSessionResponse updateSessionExercise(UUID userId, UUID sessionId, UUID sessionExerciseId, UpdateSessionExerciseRequest request) {
         var session = getValidSession(sessionId, userId);
 
@@ -132,6 +143,7 @@ public class WorkoutSessionService {
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
     }
 
+    @Transactional
     public WorkoutSessionResponse reorderExercises(UUID userId, UUID sessionId, ReorderExercisesRequest request) {
         var session = getValidSession(sessionId, userId);
 
@@ -145,6 +157,7 @@ public class WorkoutSessionService {
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
     }
 
+    @Transactional
     public WorkoutSessionResponse reorderSets(UUID userId, UUID sessionId, UUID exerciseId, ReorderSetsRequest request) {
         var session = getValidSession(sessionId, userId);
 
@@ -158,6 +171,7 @@ public class WorkoutSessionService {
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
     }
 
+    @Transactional
     public WorkoutSessionResponse finish(UUID userId, UUID sessionId, FinishSessionRequest request) {
         var session = getOwnedSession(sessionId, userId);
         validateSessionNotFinished(session);
@@ -181,7 +195,7 @@ public class WorkoutSessionService {
     }
 
     private WorkoutSession getSessionOrThrow(UUID sessionId) {
-        return workoutSessionRepository.findById(sessionId)
+        return workoutSessionRepository.findByIdWithDetails(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", sessionId));
     }
 

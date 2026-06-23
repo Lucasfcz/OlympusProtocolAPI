@@ -350,7 +350,7 @@ public class WorkoutPlanController {
     public ResponseEntity<WorkoutPlanResponse> changeVisibility(
             @AuthenticationPrincipal User user,
             @PathVariable UUID planId
-    ) {
+     ) {
         workoutPlanService.changeVisibility(user.getId(), planId);
         return ResponseEntity.noContent().build();
     }
