@@ -5,6 +5,7 @@ import io.github.lucasfcz.olympusprotocol.models.User;
 import io.github.lucasfcz.olympusprotocol.models.WorkoutSessionSet;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,13 +14,38 @@ import java.util.UUID;
 // Read-only repository, writes are handled by WorkoutSession cascade
 public interface WorkoutSessionSetRepository extends JpaRepository<WorkoutSessionSet, UUID> {
     @Query("""
-    SELECT s
-    FROM WorkoutSessionSet s
-    WHERE s.workoutSessionExercise.exercise = :exercise
-      AND s.workoutSessionExercise.workoutSession.user = :user
-      AND s.workoutSessionExercise.workoutSession.finishedAt IS NOT NULL
-      ORDER BY s.workoutSessionExercise.workoutSession.startedAt ASC
+    SELECT s FROM WorkoutSessionSet s
+    JOIN FETCH s.workoutSessionExercise se
+    JOIN FETCH se.workoutSession ws
+    WHERE ws.user = :user
+    AND se.exercise = :exercise
+    AND ws.finishedAt IS NOT NULL
+    ORDER BY ws.startedAt ASC
 """)
-    List<WorkoutSessionSet> findCompletedSetsByUserAndExercise(User user, Exercise exercise);
+    List<WorkoutSessionSet> findCompletedSetsByUserAndExercise(
+            @Param("user") User user,
+            @Param("exercise") Exercise exercise
+    );
 
+    @Query("""
+    SELECT COUNT(s)
+    FROM WorkoutSessionSet s
+    JOIN s.workoutSessionExercise se
+    JOIN se.workoutSession ws
+    WHERE ws.user = :user
+    AND ws.finishedAt IS NOT NULL
+""")
+    long totalOfSetsFromUser(@Param("user") User user);
+
+    @Query("""
+    SELECT se.exercise.name
+    FROM WorkoutSessionExercise se
+    JOIN se.workoutSession ws
+    WHERE ws.user = :user
+    AND ws.finishedAt IS NOT NULL
+    GROUP BY se.exercise.name
+    ORDER BY COUNT(se) DESC
+    LIMIT 1
+""")
+    String findMostUsedExercise(@Param("user") User user);
 }

@@ -6,8 +6,10 @@ import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.cglib.core.Local;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -29,12 +31,15 @@ public class WorkoutSessionSet {
     private Integer setOrder;
 
     @Column(nullable = false)
+    @Min(1)
     private Integer reps;
 
     @Column // can be null, because some exercises uses the bodyweight
+    @Min(0)
     private Double weight;
 
     @Column
+    @Min(0)
     private Integer restTime;
 
     // Rating percent exertion

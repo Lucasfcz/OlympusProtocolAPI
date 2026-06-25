@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -33,13 +34,11 @@ public class WorkoutSessionExercise {
     @OneToMany(mappedBy = "workoutSessionExercise", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<WorkoutSessionSet> sets = new ArrayList<>();
 
-
     public WorkoutSessionExercise(WorkoutSession workoutSession, Exercise exercise, Integer exerciseOrder) {
         this.workoutSession = workoutSession;
         this.exercise = exercise;
         this.exerciseOrder = exerciseOrder;
     }
-
 
     public void addSet(WorkoutSessionSet set) {
         this.sets.add(set);

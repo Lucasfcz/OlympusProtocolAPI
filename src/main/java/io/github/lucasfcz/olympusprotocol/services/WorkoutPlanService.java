@@ -12,9 +12,10 @@ import io.github.lucasfcz.olympusprotocol.repositories.ExerciseRepository;
 import io.github.lucasfcz.olympusprotocol.repositories.UserRepository;
 import io.github.lucasfcz.olympusprotocol.repositories.WorkoutDayRepository;
 import io.github.lucasfcz.olympusprotocol.repositories.WorkoutPlanRepository;
-import jakarta.transaction.Transactional;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -41,7 +42,7 @@ public class WorkoutPlanService {
         return workoutPlanMapper.toResponse(workoutPlanRepository.save(plan));
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<WorkoutPlanResponse> findAllByUser(UUID userId) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
@@ -52,7 +53,7 @@ public class WorkoutPlanService {
                 .toList();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public WorkoutPlanResponse findById(UUID userId, UUID planId) {
         var plan = workoutPlanRepository.findById(planId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutPlan", planId));

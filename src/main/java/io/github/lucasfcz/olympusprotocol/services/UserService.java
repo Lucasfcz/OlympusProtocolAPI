@@ -9,9 +9,10 @@ import io.github.lucasfcz.olympusprotocol.exceptions.ResourceNotFoundException;
 import io.github.lucasfcz.olympusprotocol.mappers.UserMapper;
 import io.github.lucasfcz.olympusprotocol.models.User;
 import io.github.lucasfcz.olympusprotocol.repositories.UserRepository;
-import jakarta.transaction.Transactional;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,20 +24,20 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
-    @Transactional
+    @Transactional(readOnly = true)
     public UserResponse findOwnProfile(UUID userId) {
         var user = getUserOrThrow(userId);
         return userMapper.toResponse(user);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public PublicUserResponse findById(UUID userId) {
         var user = getUserOrThrow(userId);
 
         return userMapper.toPublicResponse(user);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<PublicUserResponse> findByNameIgnoringCase(String name) {
         return userRepository.findByNameContainingIgnoreCase(name)
                 .stream()

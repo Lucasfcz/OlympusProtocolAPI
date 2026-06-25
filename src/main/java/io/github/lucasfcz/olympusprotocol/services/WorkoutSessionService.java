@@ -1,17 +1,20 @@
 package io.github.lucasfcz.olympusprotocol.services;
 
 import io.github.lucasfcz.olympusprotocol.dto.requests.*;
+import io.github.lucasfcz.olympusprotocol.dto.responses.SessionSummaryResponse;
 import io.github.lucasfcz.olympusprotocol.dto.responses.WorkoutSessionResponse;
+import io.github.lucasfcz.olympusprotocol.dto.responses.WorkoutSessionSetResponse;
 import io.github.lucasfcz.olympusprotocol.exceptions.BusinessException;
 import io.github.lucasfcz.olympusprotocol.exceptions.ForbiddenException;
 import io.github.lucasfcz.olympusprotocol.exceptions.ResourceNotFoundException;
 import io.github.lucasfcz.olympusprotocol.mappers.WorkoutSessionMapper;
 import io.github.lucasfcz.olympusprotocol.models.*;
 import io.github.lucasfcz.olympusprotocol.repositories.*;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,7 +30,7 @@ public class WorkoutSessionService {
     private final WorkoutSessionMapper workoutSessionMapper;
 
     @Transactional
-    public WorkoutSessionResponse startFromPlan(UUID userId, UUID workoutDayId) {
+    public WorkoutSessionResponse startFromWorkoutDay(UUID userId, UUID workoutDayId) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
         validateNoActiveSession(user);
@@ -58,17 +61,17 @@ public class WorkoutSessionService {
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(new WorkoutSession(user, null)));
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public WorkoutSessionResponse findById(UUID userId, UUID sessionId) {
         return workoutSessionMapper.toResponse(getOwnedSession(sessionId, userId));
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<WorkoutSessionResponse> findAllByUser(UUID userId) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
-        return workoutSessionRepository.findByUserWithDetails(user)
+        return workoutSessionRepository.findByUserWithExercisesAndSets(user)
                 .stream()
                 .map(workoutSessionMapper::toResponse)
                 .toList();
@@ -124,6 +127,7 @@ public class WorkoutSessionService {
     public WorkoutSessionResponse updateSet(UUID userId, UUID sessionId, UUID setId, SetRequest request) {
         var session = getValidSession(sessionId, userId);
         getSetOrThrow(session, setId).updateSet(request.setOrder(), request.reps(), request.weight(), request.restTime(), request.rpe());
+
         return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
     }
 
@@ -172,15 +176,20 @@ public class WorkoutSessionService {
     }
 
     @Transactional
-    public WorkoutSessionResponse finish(UUID userId, UUID sessionId, FinishSessionRequest request) {
+    public SessionSummaryResponse finishSession(UUID userId, UUID sessionId, FinishSessionRequest request) {
         var session = getOwnedSession(sessionId, userId);
         validateSessionNotFinished(session);
         session.finish(request.notes());
-        return workoutSessionMapper.toResponse(workoutSessionRepository.save(session));
+        return workoutSessionMapper.toSummary(workoutSessionRepository.save(session));
+    }
+
+    @Transactional
+    public SessionSummaryResponse getSessionSummary(UUID userId, UUID sessionId) {
+        var session = getOwnedSession(sessionId, userId);
+        return workoutSessionMapper.toSummary(session);
     }
 
     // Private methods for clean code and reutilization code
-
     private WorkoutSession getValidSession(UUID sessionId, UUID userId) {
         var session = getSessionOrThrow(sessionId);
         checkSessionOwnership(session, userId);
@@ -195,7 +204,7 @@ public class WorkoutSessionService {
     }
 
     private WorkoutSession getSessionOrThrow(UUID sessionId) {
-        return workoutSessionRepository.findByIdWithDetails(sessionId)
+        return workoutSessionRepository.findByIdWithExercisesAndSets(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", sessionId));
     }
 

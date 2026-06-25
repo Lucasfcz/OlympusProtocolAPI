@@ -9,9 +9,9 @@ import io.github.lucasfcz.olympusprotocol.models.Exercise;
 import io.github.lucasfcz.olympusprotocol.models.enums.*;
 import io.github.lucasfcz.olympusprotocol.repositories.ExerciseRepository;
 import io.github.lucasfcz.olympusprotocol.specifications.ExerciseSpecification;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -45,13 +45,14 @@ public class ExerciseService {
         return saveChildrenAndReturn(request, exercise);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public ExerciseResponse findById(UUID id) {
         return exerciseRepository.findById(id)
                 .map(exerciseMapper::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Exercise", id));
     }
 
+    @Transactional(readOnly = true)
     public List<ExerciseResponse> findAll(String name,
                                           List<MuscleGroup> muscleGroups,
                                           List<SafetyRating> safetyRatings,
@@ -102,7 +103,7 @@ public class ExerciseService {
         exerciseRepository.save(exercise);
     }
 
-    
+    // Helpers Methods
     private ExerciseResponse saveChildrenAndReturn(ExerciseRequest request, Exercise exercise) {
         exercise.replaceMuscles(
                 request.muscles().stream()

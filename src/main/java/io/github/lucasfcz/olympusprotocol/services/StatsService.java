@@ -4,15 +4,14 @@ import io.github.lucasfcz.olympusprotocol.dto.responses.*;
 import io.github.lucasfcz.olympusprotocol.exceptions.ResourceNotFoundException;
 import io.github.lucasfcz.olympusprotocol.models.Exercise;
 import io.github.lucasfcz.olympusprotocol.models.User;
-import io.github.lucasfcz.olympusprotocol.models.WorkoutSession;
 import io.github.lucasfcz.olympusprotocol.models.WorkoutSessionSet;
 import io.github.lucasfcz.olympusprotocol.repositories.ExerciseRepository;
 import io.github.lucasfcz.olympusprotocol.repositories.UserRepository;
 import io.github.lucasfcz.olympusprotocol.repositories.WorkoutSessionRepository;
 import io.github.lucasfcz.olympusprotocol.repositories.WorkoutSessionSetRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -21,8 +20,8 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Service                         // REMEMBER IN FUTURE UPGRADE QUERIES TO STATS SERVICE
-@RequiredArgsConstructor        // HAVE TO CHANGE QUERIES TO TAKE INFORMATION DIRECT OF DB
+@Service
+@RequiredArgsConstructor
 public class StatsService {
 
     private final UserRepository userRepository;
@@ -30,7 +29,26 @@ public class StatsService {
     private final WorkoutSessionRepository workoutSessionRepository;
     private final WorkoutSessionSetRepository workoutSessionSetRepository;
 
-    @Transactional
+    @Transactional(readOnly = true)
+    public UserStatsResponse getUserStats(UUID userId) {
+        var user = getUserOrThrow(userId);
+
+        var totalSessions = workoutSessionRepository.countTotalOfSessionsFromUser(user);
+        var totalSets = workoutSessionSetRepository.totalOfSetsFromUser(user);
+        var totalVolume = workoutSessionRepository.totalVolumeAllTime(user);
+        var totalMinutes = workoutSessionRepository.totalMinutesTrained(user);
+        var mostUsed = workoutSessionSetRepository.findMostUsedExercise(user);
+
+        return new UserStatsResponse(
+                totalSessions,
+                totalSets,
+                totalVolume != null ? totalVolume : 0.0,
+                totalMinutes != null ? totalMinutes : 0L,
+                mostUsed
+        );
+    }
+
+    @Transactional(readOnly = true)
     public ExerciseStatsResponse getExerciseStats(UUID userId, UUID exerciseId) {
         var user = getUserOrThrow(userId);
         var exercise = getExerciseOrThrow(exerciseId);
@@ -80,61 +98,45 @@ public class StatsService {
         );
     }
 
-    // This method take user daily volume, to show in weekly volume graphic all volume he got in week
-    // Between Monday and Sunday
-    @Transactional
+    @Transactional(readOnly = true)
     public WeeklyVolumeResponse getWeeklyVolume(UUID userId) {
-
-        Map<DayOfWeek, Double> volumeOfDay = new EnumMap<>(DayOfWeek.class);
-
-        for (DayOfWeek day : DayOfWeek.values()) {
-            volumeOfDay.put(day, 0.0);
-        }
-        var today = LocalDate.now();
-        var startDateTime = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay();
-        var endDateTime = startDateTime.plusDays(6).with(LocalTime.MAX);
         var user = getUserOrThrow(userId);
-        var weeklySessions = workoutSessionRepository.findByUserAndFinishedAtIsNotNullAndStartedAtBetween(user, startDateTime, endDateTime);
-        for (WorkoutSession session : weeklySessions) {
-            DayOfWeek day = session.getStartedAt().getDayOfWeek();
-            volumeOfDay.put(
-                    day,
-                    volumeOfDay.get(day) + session.getTotalVolume()
-            );
-        }
+        var today = LocalDate.now();
+        var start = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay();
+        var end = start.plusDays(6).with(LocalTime.MAX);
 
-        List<DailyVolumeResponse> volumes = Arrays.stream(DayOfWeek.values())
-                .map(day -> new DailyVolumeResponse(
-                        day,
-                        volumeOfDay.get(day)
-                ))
+        var sessions = workoutSessionRepository.findSessionWithExercisesAndSetsBetweenTime(user, start, end);
+
+        Map<DayOfWeek, Double> volumeByDay = new EnumMap<>(DayOfWeek.class);
+        Arrays.stream(DayOfWeek.values()).forEach(d -> volumeByDay.put(d, 0.0));
+
+        sessions.forEach(session -> {
+            var day = session.getStartedAt().getDayOfWeek();
+            volumeByDay.merge(day, session.getTotalVolume(), Double::sum);
+        });
+
+        var volumes = Arrays.stream(DayOfWeek.values())
+                .map(day -> new DailyVolumeResponse(day, volumeByDay.get(day)))
                 .toList();
 
         return new WeeklyVolumeResponse(volumes);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public FrequencyResponse getMonthlyFrequency(UUID userId) {
         var user = getUserOrThrow(userId);
-
         var today = LocalDate.now();
-        var startOfMonth = today.withDayOfMonth(1);
-        var endOfMonth = today.with(TemporalAdjusters.lastDayOfMonth());
+        var start = today.withDayOfMonth(1).atStartOfDay();
+        var end = today.with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX);
 
-        var monthlySessions = workoutSessionRepository
-                .findByUserAndFinishedAtIsNotNullAndStartedAtBetween(
-                        user,
-                        startOfMonth.atStartOfDay(),
-                        endOfMonth.atTime(LocalTime.MAX)
-                );
+        var sessions = workoutSessionRepository.findSessionWithExercisesAndSetsBetweenTime(user, start, end);
 
-        var totalSessions = monthlySessions.size();
-        var totalDaysInMonth = endOfMonth.getDayOfMonth();
+        var totalSessions = sessions.size();
+        var totalDaysInMonth = today.with(TemporalAdjusters.lastDayOfMonth()).getDayOfMonth();
         var weeksInPeriod = Math.max(1, totalDaysInMonth / 7.0);
         var avgSessionsPerWeek = totalSessions / weeksInPeriod;
 
-        // match sessions by week in month
-        var sessionsPerWeek = monthlySessions.stream()
+        var sessionsPerWeek = sessions.stream()
                 .collect(Collectors.groupingBy(
                         s -> s.getStartedAt().toLocalDate()
                                 .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)),
@@ -148,7 +150,6 @@ public class StatsService {
         return new FrequencyResponse(totalSessions, totalDaysInMonth, avgSessionsPerWeek, sessionsPerWeek);
     }
 
-    // Helpers Methods
     private User getUserOrThrow(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("UserId", userId));
