@@ -13,7 +13,6 @@ import java.util.UUID;
 public interface WorkoutDayRepository extends JpaRepository<WorkoutDay, UUID> {
     List<WorkoutDay> findByWorkoutPlanOrderByDayOrderAsc(WorkoutPlan workoutPlan);
 
-    // ✅ FETCH JOIN to avoid N+1 queries
     @Query("""
         SELECT DISTINCT wd FROM WorkoutDay wd
         LEFT JOIN FETCH wd.exercises de
@@ -22,8 +21,6 @@ public interface WorkoutDayRepository extends JpaRepository<WorkoutDay, UUID> {
         """)
     Optional<WorkoutDay> findByIdWithExercises(@Param("id") UUID id);
 
-    Optional<WorkoutDay> findByIdAndWorkoutPlanId(
-            UUID dayId,
-            UUID workoutPlanId
+    Optional<WorkoutDay> findByIdAndWorkoutPlanId(UUID dayId, UUID workoutPlanId
     );
 }

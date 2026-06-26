@@ -1,14 +1,17 @@
 package io.github.lucasfcz.olympusprotocol.models;
 
+import io.github.lucasfcz.olympusprotocol.dto.responses.MuscleVolumeResponse;
+import io.github.lucasfcz.olympusprotocol.models.enums.MuscleGroup;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -62,5 +65,18 @@ public class WorkoutSessionExercise {
         return sets.stream()
                 .mapToDouble(WorkoutSessionSet::setVolume)
                 .sum();
+    }
+
+    public List<MuscleVolumeResponse> getAggregatedMuscleVolumes() {
+        Map<MuscleGroup, Double> aggregatedVolumes = sets.stream()
+                .flatMap(set -> set.setMuscleVolumes().stream())
+                .collect(Collectors.groupingBy(
+                        MuscleVolumeResponse::muscleGroup,
+                        Collectors.summingDouble(MuscleVolumeResponse::totalVolume)
+                ));
+
+        return aggregatedVolumes.entrySet().stream()
+                .map(entry -> new MuscleVolumeResponse(entry.getKey(), entry.getValue()))
+                .toList();
     }
 }

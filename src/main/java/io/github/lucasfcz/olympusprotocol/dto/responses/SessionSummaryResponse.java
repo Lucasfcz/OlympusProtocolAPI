@@ -8,5 +8,6 @@ public record SessionSummaryResponse(
         String workoutDayName,
         Long durationMinutes,
         Double totalVolume,
-        List<WorkoutSessionExercisesResponse> exercises
+        List<WorkoutSessionExercisesResponse> exercises,
+        List<MuscleVolumeResponse> totalMuscleVolumes
 ) {}

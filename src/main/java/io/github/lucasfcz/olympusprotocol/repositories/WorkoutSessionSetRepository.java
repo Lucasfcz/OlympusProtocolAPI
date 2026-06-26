@@ -10,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-// REMEMBER IN FUTURE UPGRADE QUERIES TO STATS SERVICE
 // Read-only repository, writes are handled by WorkoutSession cascade
 public interface WorkoutSessionSetRepository extends JpaRepository<WorkoutSessionSet, UUID> {
     @Query("""

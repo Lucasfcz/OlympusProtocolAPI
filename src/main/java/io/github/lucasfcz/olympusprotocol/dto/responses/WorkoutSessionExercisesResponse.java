@@ -10,5 +10,6 @@ public record WorkoutSessionExercisesResponse(
         String exerciseName,
         Integer exerciseOrder,
         Double exerciseVolume,
-        List<WorkoutSessionSetResponse> sets
+        List<WorkoutSessionSetResponse> sets,
+        List<MuscleVolumeResponse> totalMuscleVolume
 ) {}

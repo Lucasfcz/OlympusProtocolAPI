@@ -5,6 +5,7 @@ import io.github.lucasfcz.olympusprotocol.exceptions.ResourceNotFoundException;
 import io.github.lucasfcz.olympusprotocol.models.Exercise;
 import io.github.lucasfcz.olympusprotocol.models.User;
 import io.github.lucasfcz.olympusprotocol.models.WorkoutSessionSet;
+import io.github.lucasfcz.olympusprotocol.models.enums.MuscleGroup;
 import io.github.lucasfcz.olympusprotocol.repositories.ExerciseRepository;
 import io.github.lucasfcz.olympusprotocol.repositories.UserRepository;
 import io.github.lucasfcz.olympusprotocol.repositories.WorkoutSessionRepository;
@@ -43,11 +44,21 @@ public class StatsService {
                 totalSessions,
                 totalSets,
                 totalVolume != null ? totalVolume : 0.0,
-                totalMinutes != null ? totalMinutes : 0L,
+                totalMinutes != null ? totalMinutes : 0,
                 mostUsed
         );
     }
 
+    @Transactional(readOnly = true)
+    public MuscleVolumeResponse getAllVolumeFromMuscle(UUID userId, MuscleGroup muscleGroup) {
+        var user = getUserOrThrow(userId);
+        var totalVolumeOfMuscle = workoutSessionRepository.totalVolumeOfMuscleByUser(muscleGroup, user);
+
+        return new MuscleVolumeResponse(
+                muscleGroup,
+                totalVolumeOfMuscle
+        );
+    }
     @Transactional(readOnly = true)
     public ExerciseStatsResponse getExerciseStats(UUID userId, UUID exerciseId) {
         var user = getUserOrThrow(userId);
@@ -150,6 +161,7 @@ public class StatsService {
         return new FrequencyResponse(totalSessions, totalDaysInMonth, avgSessionsPerWeek, sessionsPerWeek);
     }
 
+    // Helpers methods
     private User getUserOrThrow(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("UserId", userId));

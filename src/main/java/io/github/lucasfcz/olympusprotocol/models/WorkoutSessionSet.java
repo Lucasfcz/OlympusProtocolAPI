@@ -1,16 +1,16 @@
 package io.github.lucasfcz.olympusprotocol.models;
 
+import io.github.lucasfcz.olympusprotocol.dto.responses.MuscleVolumeResponse;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.cglib.core.Local;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+
 
 @Entity
 @Getter
@@ -74,5 +74,15 @@ public class WorkoutSessionSet {
             return 0.0;
         }
         return weight * reps;
+    }
+
+    public List<MuscleVolumeResponse> setMuscleVolumes() {
+        if (weight == null || reps == null || workoutSessionExercise == null || workoutSessionExercise.getExercise() == null) {
+            return List.of(); // if something is null return an empty list
+        }
+        double baseVolume = setVolume();
+        return workoutSessionExercise.getExercise().getMuscles().stream()
+                .map(am -> new MuscleVolumeResponse(am.getMuscleGroup(), baseVolume * (am.getActivationPercent() / 100.0)))
+                .toList();
     }
 }

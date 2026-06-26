@@ -2,12 +2,15 @@ package io.github.lucasfcz.olympusprotocol.controllers;
 
 import io.github.lucasfcz.olympusprotocol.dto.responses.ExerciseStatsResponse;
 import io.github.lucasfcz.olympusprotocol.dto.responses.FrequencyResponse;
+import io.github.lucasfcz.olympusprotocol.dto.responses.MuscleVolumeResponse;
 import io.github.lucasfcz.olympusprotocol.dto.responses.WeeklyVolumeResponse;
 import io.github.lucasfcz.olympusprotocol.models.User;
+import io.github.lucasfcz.olympusprotocol.models.enums.MuscleGroup;
 import io.github.lucasfcz.olympusprotocol.services.StatsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -34,6 +37,20 @@ public class StatsController {
             @PathVariable UUID exerciseId
     ) {
         return ResponseEntity.ok(statsService.getExerciseStats(user.getId(), exerciseId));
+    }
+
+    @Operation(summary = "All volume accumulated by muscle", description = "Get statistics for a specific muscle for the authenticated user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "All muscle volume retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Not found")
+    })
+    @GetMapping("/volume/muscle/{muscleGroup}")
+    public ResponseEntity<MuscleVolumeResponse> getAllVolumeFromMuscleByUser(
+            @AuthenticationPrincipal User user,
+            @PathVariable @RequestParam @Valid MuscleGroup muscleGroup
+    )  {
+        return ResponseEntity.ok(statsService.getAllVolumeFromMuscle(user.getId(), muscleGroup));
     }
 
     @Operation(summary = "Weekly volume", description = "Get the authenticated user's weekly training volume")

@@ -1,16 +1,12 @@
 package io.github.lucasfcz.olympusprotocol.mappers;
 
-import io.github.lucasfcz.olympusprotocol.dto.responses.SessionSummaryResponse;
-import io.github.lucasfcz.olympusprotocol.dto.responses.WorkoutSessionExercisesResponse;
-import io.github.lucasfcz.olympusprotocol.dto.responses.WorkoutSessionResponse;
+import io.github.lucasfcz.olympusprotocol.dto.responses.*;
 
-import io.github.lucasfcz.olympusprotocol.dto.responses.WorkoutSessionSetResponse;
 import io.github.lucasfcz.olympusprotocol.models.WorkoutSession;
 import io.github.lucasfcz.olympusprotocol.models.WorkoutSessionExercise;
 import io.github.lucasfcz.olympusprotocol.models.WorkoutSessionSet;
 import org.springframework.stereotype.Component;
 
-import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 
@@ -29,7 +25,7 @@ public class WorkoutSessionMapper {
                         : null,
                 session.getWorkoutDay() != null
                         ? session.getWorkoutDay().getName()
-                        : null,
+                        : "Free Session",
                 session.getNotes(),
                 session.getStartedAt(),
                 session.getFinishedAt(),
@@ -56,7 +52,8 @@ public class WorkoutSessionMapper {
                 exercise.getSets().stream()
                         .sorted(Comparator.comparing(WorkoutSessionSet::getSetOrder))
                         .map(this::toSetResponse)
-                        .toList()
+                        .toList(),
+                exercise.getAggregatedMuscleVolumes() // Adicionado
         );
     }
 
@@ -68,14 +65,43 @@ public class WorkoutSessionMapper {
         set.getReps(),
         set.getWeight(),
         set.getRestTime(),
-        set.getRpe()
+        set.getRpe(),
+        set.setMuscleVolumes()
+        );
+    }
+    
+    private WorkoutSessionSetResponse toSummarySetResponse(WorkoutSessionSet set) {
+        return new WorkoutSessionSetResponse(
+                set.getId(),
+                set.getWorkoutSessionExercise().getId(),
+                set.getSetOrder(),
+                set.getReps(),
+                set.getWeight(),
+                null, // restTime its null for summary
+                set.getRpe(),
+                set.setMuscleVolumes()
+        );
+    }
+    
+    private WorkoutSessionExercisesResponse toSummaryExerciseResponse(WorkoutSessionExercise exercise) {
+        return new WorkoutSessionExercisesResponse(
+                exercise.getId(),
+                exercise.getExercise().getId(),
+                exercise.getExercise().getName(),
+                exercise.getExerciseOrder(),
+                exercise.getExerciseVolume(),
+                exercise.getSets().stream()
+                        .sorted(Comparator.comparing(WorkoutSessionSet::getSetOrder))
+                        .map(this::toSummarySetResponse)
+                        .toList(),
+                exercise.getAggregatedMuscleVolumes()
         );
     }
 
     public SessionSummaryResponse toSummary(WorkoutSession session) {
         var duration = session.getFinishedAt() != null
-                ? ChronoUnit.MINUTES.between(session.getStartedAt(), session.getFinishedAt())
-                : 0L;
+                ? session.sessionDuration().toMinutes()
+                : null;
 
         var dayName = session.getWorkoutDay() != null
                 ? session.getWorkoutDay().getName()
@@ -83,25 +109,7 @@ public class WorkoutSessionMapper {
 
         var exercises = session.getExercises().stream()
                 .sorted(Comparator.comparing(WorkoutSessionExercise::getExerciseOrder))
-                .map(e -> new WorkoutSessionExercisesResponse(
-                        e.getId(),
-                        e.getExercise().getId(),
-                        e.getExercise().getName(),
-                        e.getExerciseOrder(),
-                        e.getExerciseVolume(),
-                        e.getSets().stream()
-                                .sorted(Comparator.comparing(WorkoutSessionSet::getSetOrder))
-                                .map(s -> new WorkoutSessionSetResponse(
-                                        s.getId(),
-                                        s.getWorkoutSessionExercise().getExercise().getId(),
-                                        s.getSetOrder(),
-                                        s.getReps(),
-                                        s.getWeight(),
-                                        null,
-                                        s.getRpe()
-                                ))
-                                .toList()
-                ))
+                .map(this::toSummaryExerciseResponse)
                 .toList();
 
         return new SessionSummaryResponse(
@@ -109,7 +117,8 @@ public class WorkoutSessionMapper {
                 dayName,
                 duration,
                 session.getTotalVolume(),
-                exercises
+                exercises,
+                session.getAggregatedMuscleVolumes()
         );
     }
 }

@@ -1,6 +1,8 @@
 package io.github.lucasfcz.olympusprotocol.models;
 
+import io.github.lucasfcz.olympusprotocol.dto.responses.MuscleVolumeResponse;
 import io.github.lucasfcz.olympusprotocol.exceptions.BusinessException;
+import io.github.lucasfcz.olympusprotocol.models.enums.MuscleGroup;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -11,7 +13,10 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -39,7 +44,7 @@ public class WorkoutSession {
     private LocalDateTime startedAt;
 
     @Column
-    private LocalDateTime finishedAt;  // new: null while a session is happening
+    private LocalDateTime finishedAt;  // null while a session is happening
 
     @Column(length = 500)
     private String notes;
@@ -76,6 +81,22 @@ public class WorkoutSession {
     }
 
     public Duration sessionDuration() {
+        if (finishedAt == null) {
+            return null;
+        }
         return Duration.between(startedAt, finishedAt);
+    }
+
+    public List<MuscleVolumeResponse> getAggregatedMuscleVolumes() {
+        Map<MuscleGroup, Double> aggregatedVolumes = exercises.stream()
+                .flatMap(exercise -> exercise.getAggregatedMuscleVolumes().stream())
+                .collect(Collectors.groupingBy(
+                        MuscleVolumeResponse::muscleGroup,
+                        Collectors.summingDouble(MuscleVolumeResponse::totalVolume)
+                ));
+
+        return aggregatedVolumes.entrySet().stream()
+                .map(entry -> new MuscleVolumeResponse(entry.getKey(), entry.getValue()))
+                .toList();
     }
 }

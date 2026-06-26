@@ -1,5 +1,6 @@
 package io.github.lucasfcz.olympusprotocol.dto.responses;
 
+import java.util.List;
 import java.util.UUID;
 
 public record WorkoutSessionSetResponse(
@@ -9,5 +10,6 @@ public record WorkoutSessionSetResponse(
         Integer reps,
         Double weight,
         Integer restTIme,
-        Double rpe
+        Double rpe,
+        List<MuscleVolumeResponse> musclesVolumes
 ) {}
