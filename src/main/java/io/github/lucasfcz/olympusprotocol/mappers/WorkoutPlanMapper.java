@@ -25,6 +25,7 @@ public class WorkoutPlanMapper {
                 plan.getName(),
                 plan.getGoal(),
                 plan.isActive(),
+                plan.isPublic(),
                 plan.getCreatedAt(),
                 plan.getWorkoutDays().stream()
                         .sorted(Comparator.comparing(WorkoutDay::getDayOrder))

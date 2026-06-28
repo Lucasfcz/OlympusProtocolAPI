@@ -46,6 +46,13 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(ex.getMessage()));
     }
 
+    @ExceptionHandler(PrivacyException.class)
+    public ResponseEntity<ErrorResponse> handlePrivacy(PrivacyException ex) {
+        log.warn("Access negated: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
 
     // Handle 400 Bad Request - for general business logic violations.
     // This is the catch-all for BusinessException subclasses not explicitly mapped above.

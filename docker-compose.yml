@@ -19,6 +19,11 @@ services:
     networks:
       - olympus-network
 
+  redis:
+    image: redis:8
+    ports:
+    - "6379:6379"
+
   app:
     build: .
     container_name: olympus-app

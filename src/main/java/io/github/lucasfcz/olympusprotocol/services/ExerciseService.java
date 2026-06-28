@@ -10,11 +10,16 @@ import io.github.lucasfcz.olympusprotocol.models.enums.*;
 import io.github.lucasfcz.olympusprotocol.repositories.ExerciseRepository;
 import io.github.lucasfcz.olympusprotocol.specifications.ExerciseSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+
+import static io.github.lucasfcz.olympusprotocol.cache.CachesNames.*;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +29,7 @@ public class ExerciseService {
     private final ExerciseMapper exerciseMapper;
 
     @Transactional
+    @CacheEvict(value = EXERCISES, allEntries = true)
     public ExerciseResponse create(ExerciseRequest request) {
         if (exerciseRepository.existsByNameIgnoreCase(request.name())) {
             throw new DuplicateResourceException("This exercise is already registered: " + request.name());
@@ -46,6 +52,7 @@ public class ExerciseService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = EXERCISE, key = "#id")
     public ExerciseResponse findById(UUID id) {
         return exerciseRepository.findById(id)
                 .map(exerciseMapper::toResponse)
@@ -53,6 +60,7 @@ public class ExerciseService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = EXERCISES, key = "{#name, #muscleGroups, #safetyRatings, #efficiencyRatings, #levels, #muscleHeads}")
     public List<ExerciseResponse> findAll(String name,
                                           List<MuscleGroup> muscleGroups,
                                           List<SafetyRating> safetyRatings,
@@ -69,6 +77,10 @@ public class ExerciseService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = EXERCISE, key = "#id"),
+            @CacheEvict(value = EXERCISES, allEntries = true)
+    })
     public ExerciseResponse update(UUID id, ExerciseRequest request) {
         var exercise = exerciseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Exercise", id));
@@ -88,6 +100,10 @@ public class ExerciseService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = EXERCISE, key = "#id"),
+            @CacheEvict(value = EXERCISES, allEntries = true)
+    })
     public void deactivate(UUID id) {
         var exercise = exerciseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Exercise", id));
@@ -96,6 +112,10 @@ public class ExerciseService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = EXERCISE, key = "#id"),
+            @CacheEvict(value = EXERCISES, allEntries = true)
+    })
     public void reactivate(UUID id) {
         var exercise = exerciseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Exercise", id));

@@ -4,6 +4,5 @@ public record UserStatsResponse(
         long totalSessions,
         long totalSets,
         Double totalVolumeAllTime,
-        long totalMinutesTrained,
-        String mostUsedExercise
+        long totalMinutesTrained
 ) {}

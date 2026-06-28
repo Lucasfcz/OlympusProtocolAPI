@@ -3,7 +3,6 @@ package io.github.lucasfcz.olympusprotocol.services;
 import io.github.lucasfcz.olympusprotocol.dto.requests.*;
 import io.github.lucasfcz.olympusprotocol.dto.responses.SessionSummaryResponse;
 import io.github.lucasfcz.olympusprotocol.dto.responses.WorkoutSessionResponse;
-import io.github.lucasfcz.olympusprotocol.dto.responses.WorkoutSessionSetResponse;
 import io.github.lucasfcz.olympusprotocol.exceptions.BusinessException;
 import io.github.lucasfcz.olympusprotocol.exceptions.ForbiddenException;
 import io.github.lucasfcz.olympusprotocol.exceptions.ResourceNotFoundException;
@@ -11,12 +10,16 @@ import io.github.lucasfcz.olympusprotocol.mappers.WorkoutSessionMapper;
 import io.github.lucasfcz.olympusprotocol.models.*;
 import io.github.lucasfcz.olympusprotocol.repositories.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import static io.github.lucasfcz.olympusprotocol.cache.CachesNames.*;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +32,9 @@ public class WorkoutSessionService {
     private final ExerciseValidationService exerciseValidationService;
     private final WorkoutSessionMapper workoutSessionMapper;
 
+
     @Transactional
+    @CacheEvict(value = USER_WORKOUT_SESSIONS, key = "#userId")
     public WorkoutSessionResponse startFromWorkoutDay(UUID userId, UUID workoutDayId) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
@@ -53,6 +58,7 @@ public class WorkoutSessionService {
     }
 
     @Transactional
+    @CacheEvict(value = USER_WORKOUT_SESSIONS, key = "#userId")
     public WorkoutSessionResponse startFreeSession(UUID userId) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
@@ -62,11 +68,13 @@ public class WorkoutSessionService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = WORKOUT_SESSION, key = "#sessionId")
     public WorkoutSessionResponse findById(UUID userId, UUID sessionId) {
         return workoutSessionMapper.toResponse(getOwnedSession(sessionId, userId));
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = USER_WORKOUT_SESSIONS, key = "#userId")
     public List<WorkoutSessionResponse> findAllByUser(UUID userId) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
@@ -78,6 +86,10 @@ public class WorkoutSessionService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = WORKOUT_SESSION, key = "#sessionId"),
+            @CacheEvict(value = USER_WORKOUT_SESSIONS, key = "#userId")
+    })
     public WorkoutSessionResponse addExercise(UUID userId, UUID sessionId, AddExerciseToSessionRequest request) {
         var session = getValidSession(sessionId, userId);
 
@@ -95,6 +107,10 @@ public class WorkoutSessionService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = WORKOUT_SESSION, key = "#sessionId"),
+            @CacheEvict(value = USER_WORKOUT_SESSIONS, key = "#userId")
+    })
     public WorkoutSessionResponse removeExercise(UUID userId, UUID sessionId, UUID exerciseId) {
         var session = getValidSession(sessionId, userId);
         session.removeExercise(getExerciseInSession(session, exerciseId));
@@ -103,6 +119,10 @@ public class WorkoutSessionService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = WORKOUT_SESSION, key = "#sessionId"),
+            @CacheEvict(value = USER_WORKOUT_SESSIONS, key = "#userId")
+    })
     public WorkoutSessionResponse addSet(UUID userId, UUID sessionId, UUID exerciseId, SetRequest request) {
         var session = getValidSession(sessionId, userId);
         var sessionExercise = getExerciseInSession(session, exerciseId);
@@ -117,6 +137,10 @@ public class WorkoutSessionService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = WORKOUT_SESSION, key = "#sessionId"),
+            @CacheEvict(value = USER_WORKOUT_SESSIONS, key = "#userId")
+    })
     public WorkoutSessionResponse removeSet(UUID userId, UUID sessionId, UUID exerciseId, UUID setId) {
         var session = getValidSession(sessionId, userId);
         getExerciseInSession(session, exerciseId).removeSet(getSetOrThrow(session, setId));
@@ -124,6 +148,10 @@ public class WorkoutSessionService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = WORKOUT_SESSION, key = "#sessionId"),
+            @CacheEvict(value = USER_WORKOUT_SESSIONS, key = "#userId")
+    })
     public WorkoutSessionResponse updateSet(UUID userId, UUID sessionId, UUID setId, SetRequest request) {
         var session = getValidSession(sessionId, userId);
         getSetOrThrow(session, setId).updateSet(request.setOrder(), request.reps(), request.weight(), request.restTime(), request.rpe());
@@ -132,6 +160,10 @@ public class WorkoutSessionService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = WORKOUT_SESSION, key = "#sessionId"),
+            @CacheEvict(value = USER_WORKOUT_SESSIONS, key = "#userId")
+    })
     public WorkoutSessionResponse updateSessionExercise(UUID userId, UUID sessionId, UUID sessionExerciseId, UpdateSessionExerciseRequest request) {
         var session = getValidSession(sessionId, userId);
 
@@ -148,6 +180,10 @@ public class WorkoutSessionService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = WORKOUT_SESSION, key = "#sessionId"),
+            @CacheEvict(value = USER_WORKOUT_SESSIONS, key = "#userId")
+    })
     public WorkoutSessionResponse reorderExercises(UUID userId, UUID sessionId, ReorderExercisesRequest request) {
         var session = getValidSession(sessionId, userId);
 
@@ -162,6 +198,10 @@ public class WorkoutSessionService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = WORKOUT_SESSION, key = "#sessionId"),
+            @CacheEvict(value = USER_WORKOUT_SESSIONS, key = "#userId")
+    })
     public WorkoutSessionResponse reorderSets(UUID userId, UUID sessionId, UUID exerciseId, ReorderSetsRequest request) {
         var session = getValidSession(sessionId, userId);
 
@@ -176,6 +216,16 @@ public class WorkoutSessionService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = WORKOUT_SESSION, key = "#sessionId"),
+            @CacheEvict(value = USER_WORKOUT_SESSIONS, key = "#userId"),
+            @CacheEvict(value = SESSION_SUMMARY, key = "#sessionId"),
+            @CacheEvict(value = USER_STATS, key = "#userId"),
+            @CacheEvict(value = MUSCLE_VOLUME, allEntries = true),
+            @CacheEvict(value = EXERCISE_STATS, allEntries = true),
+            @CacheEvict(value = WEEKLY_VOLUME, key = "#userId"),
+            @CacheEvict(value = MONTHLY_FREQUENCY, key = "#userId")
+    })
     public SessionSummaryResponse finishSession(UUID userId, UUID sessionId, FinishSessionRequest request) {
         var session = getOwnedSession(sessionId, userId);
         validateSessionNotFinished(session);
@@ -184,6 +234,7 @@ public class WorkoutSessionService {
     }
 
     @Transactional
+    @Cacheable(value = SESSION_SUMMARY, key = "#sessionId")
     public SessionSummaryResponse getSessionSummary(UUID userId, UUID sessionId) {
         var session = getOwnedSession(sessionId, userId);
         return workoutSessionMapper.toSummary(session);

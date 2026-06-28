@@ -1,9 +1,6 @@
 package io.github.lucasfcz.olympusprotocol.controllers;
 
-import io.github.lucasfcz.olympusprotocol.dto.responses.ExerciseStatsResponse;
-import io.github.lucasfcz.olympusprotocol.dto.responses.FrequencyResponse;
-import io.github.lucasfcz.olympusprotocol.dto.responses.MuscleVolumeResponse;
-import io.github.lucasfcz.olympusprotocol.dto.responses.WeeklyVolumeResponse;
+import io.github.lucasfcz.olympusprotocol.dto.responses.*;
 import io.github.lucasfcz.olympusprotocol.models.User;
 import io.github.lucasfcz.olympusprotocol.models.enums.MuscleGroup;
 import io.github.lucasfcz.olympusprotocol.services.StatsService;
@@ -24,6 +21,21 @@ import java.util.UUID;
 public class StatsController {
 
     private final StatsService statsService;
+
+    @Operation(summary = "User stats", description = "Get statistics for the authenticated user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "User stats retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<UserStatsResponse> userStats(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID userId
+    ) {
+        return ResponseEntity.ok(statsService.getUserStats(userId));
+    }
+
 
     @Operation(summary = "Exercise stats", description = "Get statistics for a specific exercise for the authenticated user")
     @ApiResponses({

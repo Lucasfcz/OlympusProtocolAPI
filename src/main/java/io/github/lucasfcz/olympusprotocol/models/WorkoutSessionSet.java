@@ -44,11 +44,10 @@ public class WorkoutSessionSet {
 
     // Rating percent exertion
     @Column
-    @Min(value = 0, message = "rpe cannot be less than 0")
-    @Max(value = 10, message = "rpe cannot be more than 10")
-    private Double rpe;
+    private @Min(value = 0, message = "rpe cannot be less than 0")
+    @Max(value = 10, message = "rpe cannot be more than 10") Double rpe;
 
-    public WorkoutSessionSet(WorkoutSessionExercise workoutSessionExercise, Integer setOrder, Integer reps, Double weight, Integer restTime, Double rpe) {
+    public WorkoutSessionSet(WorkoutSessionExercise workoutSessionExercise, Integer setOrder, Integer reps, Double weight, Integer restTime, @Min(value = 0, message = "rpe cannot be less than 0") @Max(value = 10, message = "rpe cannot be more than 10") Double rpe) {
         this.workoutSessionExercise = workoutSessionExercise;
         this.setOrder = setOrder;
         this.reps = reps;
@@ -57,7 +56,7 @@ public class WorkoutSessionSet {
         this.rpe = rpe;
     }
 
-    public void updateSet(Integer setOrder, Integer reps, Double weight, Integer restTime, Double rpe) {
+    public void updateSet(Integer setOrder, Integer reps, Double weight, Integer restTime, @Min(value = 0, message = "rpe cannot be less than 0") @Max(value = 10, message = "rpe cannot be more than 10") Double rpe) {
         this.setOrder = setOrder;
         this.reps = reps;
         this.weight = weight;

@@ -50,22 +50,4 @@ public class WorkoutDay {
         this.name = name;
         this.dayOrder = dayOrder;
     }
-
-    public void updateExerciseOrder(UUID exerciseId, Integer newOrder) {
-        exercises.stream()
-                .filter(e -> e.getId().equals(exerciseId))
-                .findFirst()
-                .ifPresent(e -> e.updateOrder(newOrder));
-    }
-
-    public void reorderExercises(List<ExerciseOrderItem> orders) {
-        orders.forEach(item ->
-                exercises.stream()
-                        .filter(e -> e.getId().equals(item.exerciseId()))
-                        .findFirst()
-                        .ifPresent(e -> e.updateOrder(item.order()))
-        );
-    }
-
-    public record ExerciseOrderItem(UUID exerciseId, Integer order) {}
 }

@@ -44,6 +44,28 @@ public class WorkoutPlanController {
                 .body(workoutPlanService.create(user.getId(), request));
     }
 
+    @Operation(summary = "Copy a public workout plan", description = "create a new workout plan based on an existing public plan with original plan id")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Workout plan copied successfully"),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized"),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Not found")
+    })
+    @PostMapping("/copy/{originalPlanId}")
+    public ResponseEntity<WorkoutPlanResponse> copyWorkoutPlan(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID originalPlanId,
+            @RequestBody @Valid WorkoutPlanRequest request
+
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(workoutPlanService.copyWorkoutPlan(user.getId(), originalPlanId, request));
+    }
+
     @Operation(summary = "List all workout plans", description = "Retrieve all workout plans of the authenticated user")
     @ApiResponses({
             @ApiResponse(
@@ -81,7 +103,7 @@ public class WorkoutPlanController {
             @AuthenticationPrincipal User user,
             @PathVariable UUID planId
     ) {
-        return ResponseEntity.ok(workoutPlanService.findById(user.getId(), planId));
+        return ResponseEntity.ok(workoutPlanService.findById(planId));
     }
 
     @Operation(summary = "Add a day to workout plan", description = "Add a new workout day to an existing workout plan")

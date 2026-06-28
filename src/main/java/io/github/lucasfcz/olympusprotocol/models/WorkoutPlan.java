@@ -1,6 +1,5 @@
 package io.github.lucasfcz.olympusprotocol.models;
 
-import io.github.lucasfcz.olympusprotocol.dto.requests.ReorderDaysRequest;
 import io.github.lucasfcz.olympusprotocol.models.enums.WorkoutGoal;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

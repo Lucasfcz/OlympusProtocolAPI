@@ -11,6 +11,7 @@ import io.github.lucasfcz.olympusprotocol.repositories.UserRepository;
 import io.github.lucasfcz.olympusprotocol.repositories.WorkoutSessionRepository;
 import io.github.lucasfcz.olympusprotocol.repositories.WorkoutSessionSetRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,8 @@ import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static io.github.lucasfcz.olympusprotocol.cache.CachesNames.*;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,7 @@ public class StatsService {
     private final WorkoutSessionSetRepository workoutSessionSetRepository;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = USER_STATS, key = "#userId")
     public UserStatsResponse getUserStats(UUID userId) {
         var user = getUserOrThrow(userId);
 
@@ -38,18 +42,17 @@ public class StatsService {
         var totalSets = workoutSessionSetRepository.totalOfSetsFromUser(user);
         var totalVolume = workoutSessionRepository.totalVolumeAllTime(user);
         var totalMinutes = workoutSessionRepository.totalMinutesTrained(user);
-        var mostUsed = workoutSessionSetRepository.findMostUsedExercise(user);
 
         return new UserStatsResponse(
                 totalSessions,
                 totalSets,
                 totalVolume != null ? totalVolume : 0.0,
-                totalMinutes != null ? totalMinutes : 0,
-                mostUsed
+                totalMinutes != null ? totalMinutes : 0
         );
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = MUSCLE_VOLUME, key = "{#userId, #muscleGroup}")
     public MuscleVolumeResponse getAllVolumeFromMuscle(UUID userId, MuscleGroup muscleGroup) {
         var user = getUserOrThrow(userId);
         var totalVolumeOfMuscle = workoutSessionRepository.totalVolumeOfMuscleByUser(muscleGroup, user);
@@ -60,6 +63,7 @@ public class StatsService {
         );
     }
     @Transactional(readOnly = true)
+    @Cacheable(value = EXERCISE_STATS, key = "{#userId, #exerciseId}")
     public ExerciseStatsResponse getExerciseStats(UUID userId, UUID exerciseId) {
         var user = getUserOrThrow(userId);
         var exercise = getExerciseOrThrow(exerciseId);
@@ -110,6 +114,7 @@ public class StatsService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = WEEKLY_VOLUME, key = "#userId")
     public WeeklyVolumeResponse getWeeklyVolume(UUID userId) {
         var user = getUserOrThrow(userId);
         var today = LocalDate.now();
@@ -134,6 +139,7 @@ public class StatsService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = MONTHLY_FREQUENCY, key = "#userId")
     public FrequencyResponse getMonthlyFrequency(UUID userId) {
         var user = getUserOrThrow(userId);
         var today = LocalDate.now();

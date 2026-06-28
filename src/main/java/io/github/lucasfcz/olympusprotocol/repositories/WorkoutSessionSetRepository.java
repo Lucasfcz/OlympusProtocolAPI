@@ -35,16 +35,4 @@ public interface WorkoutSessionSetRepository extends JpaRepository<WorkoutSessio
     AND ws.finishedAt IS NOT NULL
 """)
     long totalOfSetsFromUser(@Param("user") User user);
-
-    @Query("""
-    SELECT se.exercise.name
-    FROM WorkoutSessionExercise se
-    JOIN se.workoutSession ws
-    WHERE ws.user = :user
-    AND ws.finishedAt IS NOT NULL
-    GROUP BY se.exercise.name
-    ORDER BY COUNT(se) DESC
-    LIMIT 1
-""")
-    String findMostUsedExercise(@Param("user") User user);
 }

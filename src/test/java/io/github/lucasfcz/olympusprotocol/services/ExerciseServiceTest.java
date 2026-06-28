@@ -2,7 +2,6 @@ package io.github.lucasfcz.olympusprotocol.services;
 
 import io.github.lucasfcz.olympusprotocol.TestFactory;
 import io.github.lucasfcz.olympusprotocol.dto.requests.ExerciseRequest;
-import io.github.lucasfcz.olympusprotocol.dto.responses.ExerciseResponse;
 import io.github.lucasfcz.olympusprotocol.exceptions.DuplicateResourceException;
 import io.github.lucasfcz.olympusprotocol.exceptions.ResourceNotFoundException;
 import io.github.lucasfcz.olympusprotocol.mappers.ExerciseMapper;
@@ -29,7 +28,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ExerciseService Tests")
 class ExerciseServiceTest {
-/*
+
     private static final UUID EXERCISE_ID = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
 
     @Mock
@@ -53,14 +52,23 @@ class ExerciseServiceTest {
     void create_validRequest_shouldSaveAndReturnResponse() {
         // Arrange
         when(exerciseRepository.existsByNameIgnoreCase(exerciseRequest.name())).thenReturn(false);
-        when(exerciseRepository.save(any(Exercise.class))).thenAnswer(i -> i.getArgument(0));
-        var mockResponse = new ExerciseResponse(
-            EXERCISE_ID, exerciseRequest.name(), exerciseRequest.description(),
-            exerciseRequest.minExperienceLevel(), exerciseRequest.safetyRating(),
-            exerciseRequest.efficiencyRating(), exerciseRequest.adminNotes(),
-            exerciseRequest.gifUrl(), false, true, List.of(), List.of(), List.of()
-        );
+        when(exerciseRepository.save(any(Exercise.class))).thenAnswer(i -> {
+            Exercise savedExercise = i.getArgument(0);
+            try {
+                java.lang.reflect.Field field = Exercise.class.getDeclaredField("id");
+                field.setAccessible(true);
+                field.set(savedExercise, EXERCISE_ID);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+            return savedExercise;
+        });
+        var mockResponse = TestFactory.makeExerciseResponse(EXERCISE_ID);
         when(exerciseMapper.toResponse(any(Exercise.class))).thenReturn(mockResponse);
+        when(exerciseMapper.toMuscleEntity(any(Exercise.class), any())).thenCallRealMethod();
+        when(exerciseMapper.toTipEntity(any(Exercise.class), any())).thenCallRealMethod();
+        when(exerciseMapper.toContraindicationEntity(any(Exercise.class), any())).thenCallRealMethod();
+
 
         // Act
         var result = exerciseService.create(exerciseRequest);
@@ -68,6 +76,7 @@ class ExerciseServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals(exerciseRequest.name(), result.name());
+        // One save for the initial exercise, another for saving children (muscles, tips, contraindications)
         verify(exerciseRepository, times(2)).save(any(Exercise.class));
         verify(exerciseMapper).toResponse(any());
     }
@@ -87,13 +96,8 @@ class ExerciseServiceTest {
     @DisplayName("findById should return exercise when found")
     void findById_exerciseExists_shouldReturnResponse() {
         // Arrange
-        var exercise = TestFactory.makeExercise(ExperienceLevel.BEGINNER);
-        var mockResponse = new ExerciseResponse(
-            EXERCISE_ID, exercise.getName(), exercise.getDescription(),
-            exercise.getRecommendedExperienceLevel(), exercise.getSafetyRating(),
-            exercise.getEfficiencyRating(), exercise.getAdminNotes(), exercise.getGifUrl(), false
-            true, List.of(), List.of(), List.of()
-        );
+        var exercise = TestFactory.makeExercise(EXERCISE_ID, ExperienceLevel.BEGINNER);
+        var mockResponse = TestFactory.makeExerciseResponse(EXERCISE_ID);
         when(exerciseRepository.findById(EXERCISE_ID)).thenReturn(Optional.of(exercise));
         when(exerciseMapper.toResponse(exercise)).thenReturn(mockResponse);
 
@@ -121,13 +125,8 @@ class ExerciseServiceTest {
     @DisplayName("findAll should return mapped list of exercises")
     void findAll_withFilters_shouldReturnMappedList() {
         // Arrange
-        var exercise = TestFactory.makeExercise(ExperienceLevel.BEGINNER);
-        var mockResponse = new ExerciseResponse(
-            EXERCISE_ID, exercise.getName(), exercise.getDescription(),
-            exercise.getRecommendedExperienceLevel(), exercise.getSafetyRating(),
-            exercise.getEfficiencyRating(), exercise.getAdminNotes(), exercise.getGifUrl(),
-            true, List.of(), List.of(), List.of()
-        );
+        var exercise = TestFactory.makeExercise(EXERCISE_ID, ExperienceLevel.BEGINNER);
+        var mockResponse = TestFactory.makeExerciseResponse(EXERCISE_ID);
         when(exerciseRepository.findAll(any(Specification.class))).thenReturn(List.of(exercise));
         when(exerciseMapper.toResponse(any())).thenReturn(mockResponse);
 
@@ -145,17 +144,15 @@ class ExerciseServiceTest {
     @DisplayName("update should successfully update exercise when found and name is unique")
     void update_validRequest_shouldUpdateAndReturnResponse() {
         // Arrange
-        var existing = TestFactory.makeExercise(ExperienceLevel.BEGINNER);
-        var mockResponse = new ExerciseResponse(
-            EXERCISE_ID, exerciseRequest.name(), exerciseRequest.description(),
-            exerciseRequest.minExperienceLevel(), exerciseRequest.safetyRating(),
-            exerciseRequest.efficiencyRating(), exerciseRequest.adminNotes(),
-            exerciseRequest.gifUrl(), true, List.of(), List.of(), List.of()
-        );
+        var existing = TestFactory.makeExercise(EXERCISE_ID, ExperienceLevel.BEGINNER);
+        var mockResponse = TestFactory.makeExerciseResponse(EXERCISE_ID);
         when(exerciseRepository.findById(EXERCISE_ID)).thenReturn(Optional.of(existing));
         when(exerciseRepository.existsByNameIgnoreCase(exerciseRequest.name())).thenReturn(false);
         when(exerciseRepository.save(any(Exercise.class))).thenAnswer(i -> i.getArgument(0));
         when(exerciseMapper.toResponse(any())).thenReturn(mockResponse);
+        when(exerciseMapper.toMuscleEntity(any(Exercise.class), any())).thenCallRealMethod();
+        when(exerciseMapper.toTipEntity(any(Exercise.class), any())).thenCallRealMethod();
+        when(exerciseMapper.toContraindicationEntity(any(Exercise.class), any())).thenCallRealMethod();
 
         // Act
         var result = exerciseService.update(EXERCISE_ID, exerciseRequest);
@@ -164,14 +161,14 @@ class ExerciseServiceTest {
         assertNotNull(result);
         assertEquals(exerciseRequest.name(), result.name());
         verify(exerciseRepository).findById(EXERCISE_ID);
-        verify(exerciseRepository).save(any(Exercise.class));
+        verify(exerciseRepository).save(any(Exercise.class)); // One save call inside saveChildrenAndReturn
     }
 
     @Test
     @DisplayName("update should throw DuplicateResourceException when name exists for different exercise")
     void update_duplicateNameDifferentExercise_shouldThrowDuplicateResourceException() {
         // Arrange
-        var existing = TestFactory.makeExercise(ExperienceLevel.BEGINNER);
+        var existing = TestFactory.makeExercise(EXERCISE_ID, ExperienceLevel.BEGINNER);
         existing.updateInfo("Different Name", "desc", ExperienceLevel.BEGINNER, existing.getSafetyRating(), existing.getEfficiencyRating(), "", "");
         when(exerciseRepository.findById(EXERCISE_ID)).thenReturn(Optional.of(existing));
         when(exerciseRepository.existsByNameIgnoreCase(exerciseRequest.name())).thenReturn(true);
@@ -194,7 +191,7 @@ class ExerciseServiceTest {
     @DisplayName("deactivate should set exercise to inactive")
     void deactivate_exerciseExists_shouldDeactivateAndSave() {
         // Arrange
-        var existing = TestFactory.makeExercise(ExperienceLevel.BEGINNER);
+        var existing = TestFactory.makeExercise(EXERCISE_ID, ExperienceLevel.BEGINNER);
         assertTrue(existing.isActive());
         when(exerciseRepository.findById(EXERCISE_ID)).thenReturn(Optional.of(existing));
 
@@ -220,7 +217,7 @@ class ExerciseServiceTest {
     @DisplayName("reactivate should set exercise to active")
     void reactivate_inactiveExercise_shouldReactivateAndSave() {
         // Arrange
-        var existing = TestFactory.makeExercise(ExperienceLevel.BEGINNER);
+        var existing = TestFactory.makeExercise(EXERCISE_ID, ExperienceLevel.BEGINNER);
         existing.deactivate();
         assertFalse(existing.isActive());
         when(exerciseRepository.findById(EXERCISE_ID)).thenReturn(Optional.of(existing));
@@ -242,7 +239,4 @@ class ExerciseServiceTest {
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> exerciseService.reactivate(EXERCISE_ID));
     }
-
- */
 }
-

@@ -11,6 +11,7 @@ public record WorkoutPlanResponse(
         String name,
         WorkoutGoal goal,
         boolean active,
+        boolean isPublic,
         LocalDateTime createdAt,
         List<WorkoutDayResponse> days,
         List<String> warnings
