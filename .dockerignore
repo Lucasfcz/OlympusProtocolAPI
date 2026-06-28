@@ -1,0 +1,21 @@
+# Git
+.git
+.gitignore
+
+.env
+*.env
+
+# IntelliJ
+.idea/
+*.iml
+*.iws
+
+target/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
