@@ -9,7 +9,7 @@ public record WorkoutSessionSetResponse(
         Integer setOrder,
         Integer reps,
         Double weight,
-        Integer restTIme,
+        Integer restTime,
         Double rpe,
         List<MuscleVolumeResponse> musclesVolumes
 ) {}

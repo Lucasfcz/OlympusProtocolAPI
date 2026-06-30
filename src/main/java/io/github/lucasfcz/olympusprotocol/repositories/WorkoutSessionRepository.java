@@ -95,5 +95,30 @@ public interface WorkoutSessionRepository extends JpaRepository<WorkoutSession, 
         AND s.reps IS NOT NULL
         AND m.activationPercent IS NOT NULL
 """)
-    Double totalVolumeOfMuscleByUser(@Param("muscleGroup") MuscleGroup muscleGroup, @Param("user") User user); // Corrigido o parâmetro
+    Double totalVolumeOfMuscleByUser(@Param("muscleGroup") MuscleGroup muscleGroup, @Param("user") User user);
+
+
+    @Query("""
+        SELECT ws FROM WorkoutSession ws
+        LEFT JOIN FETCH ws.workoutDay wd
+        WHERE ws.user = :user
+        AND ws.workoutDay IS NOT NULL
+        AND ws.finishedAt IS NOT NULL
+        ORDER BY ws.startedAt DESC
+    """)
+    List<WorkoutSession> findLastTwoSessionsWithWorkoutPlan(@Param("user") User user);
+
+    @Query("""
+        SELECT SUM((wss.weight * wss.reps) * am.activationPercent / 100.0)
+        FROM WorkoutSessionSet wss
+        JOIN wss.workoutSessionExercise wse
+        JOIN wse.exercise e
+        JOIN e.muscles am
+        WHERE wse.workoutSession.id = :sessionId
+        AND am.muscleGroup = :muscleGroup
+        AND wss.weight IS NOT NULL
+        AND wss.reps IS NOT NULL
+        AND am.activationPercent IS NOT NULL
+    """)
+    Optional<Double> calculateMuscleVolumeForSession(@Param("sessionId") UUID sessionId, @Param("muscleGroup") MuscleGroup muscleGroup);
 }

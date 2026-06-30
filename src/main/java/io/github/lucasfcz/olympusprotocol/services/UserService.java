@@ -5,6 +5,7 @@ import io.github.lucasfcz.olympusprotocol.dto.requests.UpdateUserHeightRequest;
 import io.github.lucasfcz.olympusprotocol.dto.requests.UpdateUserProfileRequest;
 import io.github.lucasfcz.olympusprotocol.dto.responses.PublicUserResponse;
 import io.github.lucasfcz.olympusprotocol.dto.responses.UserResponse;
+import io.github.lucasfcz.olympusprotocol.exceptions.BusinessException;
 import io.github.lucasfcz.olympusprotocol.exceptions.ResourceNotFoundException;
 import io.github.lucasfcz.olympusprotocol.mappers.UserMapper;
 import io.github.lucasfcz.olympusprotocol.models.User;
@@ -102,15 +103,15 @@ public class UserService {
             @CacheEvict(value = USER_WORKOUT_PLANS, key = "#userId"),
             @CacheEvict(value = ACTIVE_WORKOUT_PLAN, key = "#userId"),
             @CacheEvict(value = USER_STATS, key = "#userId"),
-            @CacheEvict(value = MUSCLE_VOLUME, allEntries = true), // Invalidate all muscle volumes for this user
-            @CacheEvict(value = EXERCISE_STATS, allEntries = true), // Invalidate all exercise stats for this user
             @CacheEvict(value = WEEKLY_VOLUME, key = "#userId"),
             @CacheEvict(value = MONTHLY_FREQUENCY, key = "#userId")
     })
     public void deactivate(UUID userId) {
         var user = getUserOrThrow(userId);
-        user.deactivate();
-        userRepository.save(user);
+        if(user.isActive()) {
+            user.deactivate();
+            userRepository.save(user);
+        }
     }
 
     // Helper Methods

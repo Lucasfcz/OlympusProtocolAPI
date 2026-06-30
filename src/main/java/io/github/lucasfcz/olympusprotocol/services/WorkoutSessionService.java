@@ -1,6 +1,7 @@
 package io.github.lucasfcz.olympusprotocol.services;
 
 import io.github.lucasfcz.olympusprotocol.dto.requests.*;
+import io.github.lucasfcz.olympusprotocol.dto.responses.MuscleVolumeChangeResponse;
 import io.github.lucasfcz.olympusprotocol.dto.responses.SessionSummaryResponse;
 import io.github.lucasfcz.olympusprotocol.dto.responses.WorkoutSessionResponse;
 import io.github.lucasfcz.olympusprotocol.exceptions.BusinessException;
@@ -16,6 +17,7 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,6 +33,7 @@ public class WorkoutSessionService {
     private final ExerciseRepository exerciseRepository;
     private final ExerciseValidationService exerciseValidationService;
     private final WorkoutSessionMapper workoutSessionMapper;
+    private final StatsService statsService;
 
 
     @Transactional
@@ -230,14 +233,33 @@ public class WorkoutSessionService {
         var session = getOwnedSession(sessionId, userId);
         validateSessionNotFinished(session);
         session.finish(request.notes());
-        return workoutSessionMapper.toSummary(workoutSessionRepository.save(session));
+        var savedSession = workoutSessionRepository.save(session);
+
+        List<MuscleVolumeChangeResponse> muscleVolumeChanges = Collections.emptyList();
+        try {
+            muscleVolumeChanges = statsService.getMuscleVolumeChangeByLastSession(userId);
+        } catch (BusinessException e) {
+            // Log the exception or handle it as needed, but don't prevent the session from finishing
+            // For now, we'll just return an empty list if there aren't enough sessions to compare
+            System.out.println("Could not calculate muscle volume changes: " + e.getMessage());
+        }
+
+        return workoutSessionMapper.toSummary(savedSession, muscleVolumeChanges);
     }
 
     @Transactional
     @Cacheable(value = SESSION_SUMMARY, key = "#sessionId")
     public SessionSummaryResponse getSessionSummary(UUID userId, UUID sessionId) {
         var session = getOwnedSession(sessionId, userId);
-        return workoutSessionMapper.toSummary(session);
+        
+        List<MuscleVolumeChangeResponse> muscleVolumeChanges = Collections.emptyList();
+        try {
+            muscleVolumeChanges = statsService.getMuscleVolumeChangeByLastSession(userId);
+        } catch (BusinessException e) {
+            System.out.println("Could not calculate muscle volume changes: " + e.getMessage());
+        }
+
+        return workoutSessionMapper.toSummary(session, muscleVolumeChanges);
     }
 
     // Private methods for clean code and reutilization code

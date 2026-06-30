@@ -1,5 +1,6 @@
 package io.github.lucasfcz.olympusprotocol.configs;
 
+import io.github.lucasfcz.olympusprotocol.cache.CachesNames;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,75 +27,75 @@ public class RedisConfig {
 
                 // Workout Plans
                 .withCacheConfiguration(
-                        "active-workout-plan",
+                        CachesNames.ACTIVE_WORKOUT_PLAN,
                         defaultConfig.entryTtl(Duration.ofMinutes(10))
                 )
                 .withCacheConfiguration(
-                        "user-workout-plans",
+                        CachesNames.USER_WORKOUT_PLANS,
                         defaultConfig.entryTtl(Duration.ofMinutes(15))
                 )
                 .withCacheConfiguration(
-                        "workout-plan",
+                        CachesNames.WORKOUT_PLAN,
                         defaultConfig.entryTtl(Duration.ofMinutes(20))
                 )
 
                 // Workout Sessions
                 .withCacheConfiguration(
-                        "workout-session",
+                        CachesNames.WORKOUT_SESSION,
                         defaultConfig.entryTtl(Duration.ofMinutes(5))
                 )
                 .withCacheConfiguration(
-                        "user-workout-sessions",
+                        CachesNames.USER_WORKOUT_SESSIONS,
                         defaultConfig.entryTtl(Duration.ofMinutes(5))
                 )
                 .withCacheConfiguration(
-                        "session-summary",
+                        CachesNames.SESSION_SUMMARY,
                         defaultConfig.entryTtl(Duration.ofHours(1))
                 )
 
                 // Stats
                 .withCacheConfiguration(
-                        "user-stats",
+                        CachesNames.USER_STATS,
                         defaultConfig.entryTtl(Duration.ofMinutes(5))
                 )
                 .withCacheConfiguration(
-                        "muscle-volume",
+                        CachesNames.MUSCLE_VOLUME,
                         defaultConfig.entryTtl(Duration.ofMinutes(5))
                 )
                 .withCacheConfiguration(
-                        "exercise-stats",
+                        CachesNames.EXERCISE_STATS,
                         defaultConfig.entryTtl(Duration.ofMinutes(5))
                 )
                 .withCacheConfiguration(
-                        "weekly-volume",
+                        CachesNames.WEEKLY_VOLUME,
                         defaultConfig.entryTtl(Duration.ofMinutes(5))
                 )
                 .withCacheConfiguration(
-                        "monthly-frequency",
+                        CachesNames.MONTHLY_FREQUENCY,
                         defaultConfig.entryTtl(Duration.ofMinutes(10))
                 )
 
                 // Users
                 .withCacheConfiguration(
-                        "user-profile",
+                        CachesNames.USER_PROFILE,
                         defaultConfig.entryTtl(Duration.ofMinutes(30))
                 )
                 .withCacheConfiguration(
-                        "public-user-profile",
+                        CachesNames.PUBLIC_USER_PROFILE,
                         defaultConfig.entryTtl(Duration.ofHours(1))
                 )
                 .withCacheConfiguration(
-                        "users-by-name",
+                        CachesNames.USERS_BY_NAME,
                         defaultConfig.entryTtl(Duration.ofMinutes(10))
                 )
 
                 // Exercises
                 .withCacheConfiguration(
-                        "exercise",
+                        CachesNames.EXERCISE,
                         defaultConfig.entryTtl(Duration.ofHours(6))
                 )
                 .withCacheConfiguration(
-                        "exercises",
+                        CachesNames.EXERCISES,
                         defaultConfig.entryTtl(Duration.ofHours(2))
                 )
 

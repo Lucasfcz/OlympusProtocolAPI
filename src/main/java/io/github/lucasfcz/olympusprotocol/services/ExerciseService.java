@@ -125,11 +125,13 @@ public class ExerciseService {
 
     // Helpers Methods
     private ExerciseResponse saveChildrenAndReturn(ExerciseRequest request, Exercise exercise) {
-        exercise.replaceMuscles(
-                request.muscles().stream()
-                        .map(m -> exerciseMapper.toMuscleEntity(exercise, m))
-                        .toList()
-        );
+        if (request.muscles() != null) {
+            exercise.replaceMuscles(
+                    request.muscles().stream()
+                            .map(m -> exerciseMapper.toMuscleEntity(exercise, m))
+                            .toList()
+            );
+        }
 
         if (request.tips() != null) {
             exercise.replaceTips(

@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -28,12 +29,11 @@ public class StatsController {
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
-    @GetMapping("/user/{userId}")
+    @GetMapping("/user/me") // Changed endpoint to /user/me
     public ResponseEntity<UserStatsResponse> userStats(
-            @AuthenticationPrincipal User user,
-            @PathVariable UUID userId
+            @AuthenticationPrincipal User user
     ) {
-        return ResponseEntity.ok(statsService.getUserStats(userId));
+        return ResponseEntity.ok(statsService.getUserStats(user.getId()));
     }
 
 
@@ -86,5 +86,19 @@ public class StatsController {
             @AuthenticationPrincipal User user
     ) {
         return ResponseEntity.ok(statsService.getMonthlyFrequency(user.getId()));
+    }
+
+    @Operation(summary = "Muscle volume change by last session", description = "Get the percentage change in muscle volume between the last two completed sessions with a workout plan for the authenticated user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Muscle volume changes retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "400", description = "Not enough completed sessions with a workout plan to compare volume changes.")
+    })
+    @GetMapping("/volume/change/last-session")
+    public ResponseEntity<List<MuscleVolumeChangeResponse>> getMuscleVolumeChangeByLastSession(
+            @AuthenticationPrincipal User user
+    ) {
+        return ResponseEntity.ok(statsService.getMuscleVolumeChangeByLastSession(user.getId()));
     }
 }

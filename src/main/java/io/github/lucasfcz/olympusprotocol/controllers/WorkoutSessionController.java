@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -155,53 +154,84 @@ public class WorkoutSessionController {
     public ResponseEntity<WorkoutSessionResponse> removeExercise(
             @AuthenticationPrincipal User user,
             @PathVariable UUID sessionId,
-            @PathVariable UUID sessionExerciseId
+            @PathVariable UUID sessionExerciseId // Corrected path variable name
     ) {
         WorkoutSessionResponse resp = workoutSessionService.removeExercise(user.getId(), sessionId, sessionExerciseId);
         return ResponseEntity.ok(resp);
     }
 
-    @PostMapping("/{sessionId}/exercises/{sessionExerciseId}")
+    @Operation(summary = "Add set to session exercise", description = "Add a set to a specific exercise within a workout session")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Set added successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Session or session exercise not found")
+    })
+    @PostMapping("/{sessionId}/exercises/{sessionExerciseId}/sets") // Corrected path to include /sets
     public ResponseEntity<WorkoutSessionResponse> addSet(
             @AuthenticationPrincipal User user,
             @PathVariable UUID sessionId,
-            @PathVariable UUID sessionExerciseId,
+            @PathVariable UUID sessionExerciseId, // Corrected path variable name
             @RequestBody @Valid SetRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(workoutSessionService.addSet(user.getId(), sessionId, sessionExerciseId, request));
     }
 
-    @DeleteMapping("/{sessionId}/exercises/{exerciseId}/sets/{setId}")
+    @Operation(summary = "Remove set from session exercise", description = "Remove a set from a specific exercise within a workout session")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Set removed successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Session, session exercise or set not found")
+    })
+    @DeleteMapping("/{sessionId}/exercises/{sessionExerciseId}/sets/{setId}") // Corrected path variable name
     public ResponseEntity<WorkoutSessionResponse> removeSet(
             @AuthenticationPrincipal User user,
             @PathVariable UUID sessionId,
-            @PathVariable UUID exerciseId,
+            @PathVariable UUID sessionExerciseId, // Corrected path variable name
             @PathVariable UUID setId
     ) {
-        return ResponseEntity.ok(workoutSessionService.removeSet(user.getId(), sessionId, exerciseId, setId));
+        return ResponseEntity.ok(workoutSessionService.removeSet(user.getId(), sessionId, sessionExerciseId, setId));
     }
 
-    @PutMapping("/{sessionId}/exercises/{exerciseId}")
+    @Operation(summary = "Update session exercise", description = "Update the details of a specific exercise within a workout session")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Session exercise updated successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Session or session exercise not found")
+    })
+    @PutMapping("/{sessionId}/exercises/{sessionExerciseId}") // Corrected path variable name
     public ResponseEntity<WorkoutSessionResponse> updateSessionExercise(
             @AuthenticationPrincipal User user,
             @PathVariable UUID sessionId,
-            @PathVariable UUID exerciseId,
+            @PathVariable UUID sessionExerciseId, // Corrected path variable name
             @RequestBody@Valid UpdateSessionExerciseRequest request
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(workoutSessionService.updateSessionExercise(user.getId(), sessionId, exerciseId, request));
+        return ResponseEntity.ok(workoutSessionService.updateSessionExercise(user.getId(), sessionId, sessionExerciseId, request)); // Changed status to OK
     }
 
-    @PutMapping("/{sessionId}/exercises/sets/{setId}")
+    @Operation(summary = "Update set in session exercise", description = "Update the details of a specific set within a session exercise")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Set updated successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Session, session exercise or set not found")
+    })
+    @PutMapping("/{sessionId}/exercises/{sessionExerciseId}/sets/{setId}") // Corrected path to include sessionExerciseId and setId
     public ResponseEntity<WorkoutSessionResponse> updateSet(
             @AuthenticationPrincipal User user,
             @PathVariable UUID sessionId,
+            @PathVariable UUID sessionExerciseId, // Added path variable
             @PathVariable UUID setId,
             @RequestBody @Valid SetRequest request
     ) {
         return ResponseEntity.ok(workoutSessionService.updateSet(user.getId(), sessionId, setId, request));
     }
 
-    @PatchMapping("/{sessionId}/exercises")
+    @Operation(summary = "Reorder exercises in session", description = "Reorder the exercises within a workout session")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Exercises reordered successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Session not found")
+    })
+    @PatchMapping("/{sessionId}/exercises/reorder")
     public ResponseEntity<WorkoutSessionResponse> reorderExercises(
             @AuthenticationPrincipal User user,
             @PathVariable UUID sessionId,
@@ -210,14 +240,20 @@ public class WorkoutSessionController {
         return ResponseEntity.ok(workoutSessionService.reorderExercises(user.getId(), sessionId, request));
     }
 
-    @PatchMapping("/{sessionId}/exercises/{exerciseId}/sets")
+    @Operation(summary = "Reorder sets in session exercise", description = "Reorder the sets within a specific session exercise")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Sets reordered successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Session or session exercise not found")
+    })
+    @PatchMapping("/{sessionId}/exercises/{sessionExerciseId}/sets/reorder") // Corrected path to include sessionExerciseId
     public ResponseEntity<WorkoutSessionResponse> reorderSets(
             @AuthenticationPrincipal User user,
             @PathVariable UUID sessionId,
-            @PathVariable UUID exerciseId,
+            @PathVariable UUID sessionExerciseId, // Corrected path variable name
             @RequestBody @Valid ReorderSetsRequest request
     ) {
-        return ResponseEntity.ok(workoutSessionService.reorderSets(user.getId(), sessionId, exerciseId, request));
+        return ResponseEntity.ok(workoutSessionService.reorderSets(user.getId(), sessionId, sessionExerciseId, request));
     }
 
     @Operation(summary = "Finish session and show session summary", description = "Finish a workout session providing optional notes and summary")

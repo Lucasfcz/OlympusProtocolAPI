@@ -9,5 +9,6 @@ public record SessionSummaryResponse(
         Long durationMinutes,
         Double totalVolume,
         List<WorkoutSessionExercisesResponse> exercises,
-        List<MuscleVolumeResponse> totalMuscleVolumes
+        List<MuscleVolumeResponse> totalMuscleVolumes,
+        List<MuscleVolumeChangeResponse> muscleVolumeChanges // Novo campo
 ) {}

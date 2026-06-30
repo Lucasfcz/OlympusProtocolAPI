@@ -59,6 +59,6 @@ public class ExerciseSpecification {
 
     private static Specification<Exercise> hasLevels(List<ExperienceLevel> levels) {
         return (root, query, cb) -> (levels == null || levels.isEmpty()) ? null :
-                root.get("minExperienceLevel").in(levels);
+                root.get("recommendedExperienceLevel").in(levels);
     }
 }

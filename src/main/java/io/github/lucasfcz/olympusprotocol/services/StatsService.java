@@ -1,9 +1,11 @@
 package io.github.lucasfcz.olympusprotocol.services;
 
 import io.github.lucasfcz.olympusprotocol.dto.responses.*;
+import io.github.lucasfcz.olympusprotocol.exceptions.BusinessException;
 import io.github.lucasfcz.olympusprotocol.exceptions.ResourceNotFoundException;
 import io.github.lucasfcz.olympusprotocol.models.Exercise;
 import io.github.lucasfcz.olympusprotocol.models.User;
+import io.github.lucasfcz.olympusprotocol.models.WorkoutSession;
 import io.github.lucasfcz.olympusprotocol.models.WorkoutSessionSet;
 import io.github.lucasfcz.olympusprotocol.models.enums.MuscleGroup;
 import io.github.lucasfcz.olympusprotocol.repositories.ExerciseRepository;
@@ -165,6 +167,45 @@ public class StatsService {
                 .toList();
 
         return new FrequencyResponse(totalSessions, totalDaysInMonth, avgSessionsPerWeek, sessionsPerWeek);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MuscleVolumeChangeResponse> getMuscleVolumeChangeByLastSession(UUID userId) {
+        var user = getUserOrThrow(userId);
+        List<WorkoutSession> lastTwoSessions = workoutSessionRepository.findLastTwoSessionsWithWorkoutPlan(user);
+
+        if (lastTwoSessions.size() < 2) {
+            throw new BusinessException("Not enough completed sessions with a workout plan to compare volume changes.");
+        }
+
+        WorkoutSession currentSession = lastTwoSessions.get(0);
+        WorkoutSession previousSession = lastTwoSessions.get(1);
+
+        // Get all distinct muscle groups activated in the current session
+        Set<MuscleGroup> muscleGroupsInCurrentSession = currentSession.getExercises().stream()
+                .flatMap(wse -> wse.getExercise().getMuscles().stream())
+                .map(am -> am.getMuscleGroup())
+                .collect(Collectors.toSet());
+
+        List<MuscleVolumeChangeResponse> changes = new ArrayList<>();
+
+        for (MuscleGroup muscleGroup : muscleGroupsInCurrentSession) {
+            var currentVolume = workoutSessionRepository.calculateMuscleVolumeForSession(currentSession.getId(), muscleGroup)
+                    .orElse(0.0);
+            var previousVolume = workoutSessionRepository.calculateMuscleVolumeForSession(previousSession.getId(), muscleGroup)
+                    .orElse(0.0);
+
+            var percentageChange = 0.0;
+            if (previousVolume > 0) {
+                percentageChange = ((currentVolume - previousVolume) / previousVolume) * 100;
+            } else if (currentVolume > 0) {
+                percentageChange = 100.0; // If previous volume was 0 and current is > 0, it's a 100% increase
+            }
+
+            changes.add(new MuscleVolumeChangeResponse(muscleGroup, currentVolume, previousVolume, percentageChange));
+        }
+
+        return changes;
     }
 
     // Helpers methods

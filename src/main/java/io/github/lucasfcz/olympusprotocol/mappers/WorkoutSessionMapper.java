@@ -53,7 +53,7 @@ public class WorkoutSessionMapper {
                         .sorted(Comparator.comparing(WorkoutSessionSet::getSetOrder))
                         .map(this::toSetResponse)
                         .toList(),
-                exercise.getAggregatedMuscleVolumes() // Adicionado
+                exercise.getAggregatedMuscleVolumes()
         );
     }
 
@@ -98,7 +98,7 @@ public class WorkoutSessionMapper {
         );
     }
 
-    public SessionSummaryResponse toSummary(WorkoutSession session) {
+    public SessionSummaryResponse toSummary(WorkoutSession session, List<MuscleVolumeChangeResponse> muscleVolumeChanges) {
         var duration = session.getFinishedAt() != null
                 ? session.sessionDuration().toMinutes()
                 : null;
@@ -118,7 +118,8 @@ public class WorkoutSessionMapper {
                 duration,
                 session.getTotalVolume(),
                 exercises,
-                session.getAggregatedMuscleVolumes()
+                session.getAggregatedMuscleVolumes(),
+                muscleVolumeChanges // Adicionado o novo campo
         );
     }
 }
