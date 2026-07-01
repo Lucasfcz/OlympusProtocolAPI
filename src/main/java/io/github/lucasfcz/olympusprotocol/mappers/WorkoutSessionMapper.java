@@ -119,7 +119,7 @@ public class WorkoutSessionMapper {
                 session.getTotalVolume(),
                 exercises,
                 session.getAggregatedMuscleVolumes(),
-                muscleVolumeChanges // Adicionado o novo campo
+                muscleVolumeChanges
         );
     }
 }

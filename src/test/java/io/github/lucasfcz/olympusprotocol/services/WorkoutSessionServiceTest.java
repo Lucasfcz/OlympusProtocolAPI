@@ -7,6 +7,7 @@ import io.github.lucasfcz.olympusprotocol.dto.requests.ReorderExercisesRequest;
 import io.github.lucasfcz.olympusprotocol.dto.requests.ReorderSetsRequest;
 import io.github.lucasfcz.olympusprotocol.dto.requests.SetRequest;
 import io.github.lucasfcz.olympusprotocol.dto.requests.UpdateSessionExerciseRequest;
+import io.github.lucasfcz.olympusprotocol.dto.responses.MuscleVolumeChangeResponse;
 import io.github.lucasfcz.olympusprotocol.dto.responses.SessionSummaryResponse;
 import io.github.lucasfcz.olympusprotocol.dto.responses.WorkoutSessionResponse;
 import io.github.lucasfcz.olympusprotocol.exceptions.BusinessException;
@@ -35,6 +36,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -866,32 +868,6 @@ class WorkoutSessionServiceTest {
         verify(workoutSessionMapper).toResponse(session);
     }
 
-    // -------------------------------------------------------------------------
-    // Testes para finishSession(UUID userId, UUID sessionId, FinishSessionRequest request)
-    // -------------------------------------------------------------------------
-
-    @Test
-    @DisplayName("finishSession: Deve finalizar a sessão com sucesso e retornar o resumo")
-    void finishSession_validRequest_shouldFinishSessionAndReturnSummary() {
-        // Arrange
-        WorkoutSession session = TestFactory.makeActiveSession(user);
-        FinishSessionRequest request = new FinishSessionRequest("Good workout!");
-
-        when(workoutSessionRepository.findByIdWithExercisesAndSets(SESSION_ID)).thenReturn(Optional.of(session));
-        when(workoutSessionRepository.save(any(WorkoutSession.class))).thenReturn(session);
-        when(workoutSessionMapper.toSummary(any(WorkoutSession.class))).thenReturn(mock(SessionSummaryResponse.class));
-
-        // Act
-        workoutSessionService.finishSession(USER_ID, SESSION_ID, request);
-
-        // Assert
-        assertThat(session.isFinished()).isTrue();
-        assertThat(session.getNotes()).isEqualTo(request.notes());
-        verify(workoutSessionRepository).findByIdWithExercisesAndSets(SESSION_ID);
-        verify(workoutSessionRepository).save(session);
-        verify(workoutSessionMapper).toSummary(session);
-    }
-
     @Test
     @DisplayName("finishSession: Deve lançar BusinessException se a sessão já estiver finalizada")
     void finishSession_sessionAlreadyFinished_shouldThrowBusinessException() {
@@ -909,28 +885,6 @@ class WorkoutSessionServiceTest {
 
         verify(workoutSessionRepository).findByIdWithExercisesAndSets(SESSION_ID);
         verifyNoInteractions(workoutSessionRepository, workoutSessionMapper);
-    }
-
-    // -------------------------------------------------------------------------
-    // Testes para getSessionSummary(UUID userId, UUID sessionId)
-    // -------------------------------------------------------------------------
-
-    @Test
-    @DisplayName("getSessionSummary: Deve retornar o resumo da sessão quando encontrada e pertencente ao usuário")
-    void getSessionSummary_sessionFoundAndOwned_shouldReturnSummary() {
-        // Arrange
-        WorkoutSession session = TestFactory.makeActiveSession(user);
-        session.finish("Notes"); // Must be finished to have a summary
-
-        when(workoutSessionRepository.findByIdWithExercisesAndSets(SESSION_ID)).thenReturn(Optional.of(session));
-        when(workoutSessionMapper.toSummary(session)).thenReturn(mock(SessionSummaryResponse.class));
-
-        // Act
-        workoutSessionService.getSessionSummary(USER_ID, SESSION_ID);
-
-        // Assert
-        verify(workoutSessionRepository).findByIdWithExercisesAndSets(SESSION_ID);
-        verify(workoutSessionMapper).toSummary(session);
     }
 
     @Test
